@@ -109,6 +109,45 @@ router.post('/login', async (req, res) => {
 
             // LOGIQUE DE SCRAPING (À affiner selon ton retour)
 
+            const paymentLegend = {};
+            $dashboard('#apsolu-dashboard-payment-legend ul li').each((i, el) => {
+                // On prend le 'title' de l'image comme clé (ex: "dû", "payé")
+                const iconTitle = $(el).find('img').attr('title');
+                // On prend le texte explicatif juste après l'image
+                const label = $(el).text().trim(); 
+                
+                if (iconTitle) {
+                    paymentLegend[iconTitle] = label;
+                }
+            });
+
+
+            const getPaymentStatus = (courseName) => {
+                // On prend le premier mot (ex: "Escalade") en minuscules
+                const firstWord = courseName.split(' ')[0].toLowerCase();
+                let status = null;
+
+                // On parcourt les éléments à payer dans l'onglet #payments
+                $dashboard('#payments > ul.list-unstyled > li').each((i, el) => {
+                    const itemText = $(el).text().toLowerCase();
+                    console.log("test");
+                    console.log(itemText);
+                    
+                    // Si la ligne contient le premier mot
+                    if (itemText.includes(firstWord)) {
+                        // On récupère le title de l'image de cette ligne
+                        const iconTitle = $(el).find('img').attr('title');
+                        
+                        // On fait la correspondance avec notre légende
+                        if (iconTitle && paymentLegend[iconTitle]) {
+                            status = paymentLegend[iconTitle];
+                        }
+                    }
+                });
+
+                return status; // Retourne null si le mot n'est pas trouvé
+            };
+
             // MES ACTIVITES
             $dashboard('#courses > ul > li').each((i, el) => {
                 const rawText = $dashboard(el).find('.card-header').text().trim();
@@ -119,10 +158,13 @@ router.post('/login', async (req, res) => {
                     // Logique de découpage : on peut essayer d'isoler le sport 
                     // Souvent le nom du sport est au début avant les horaires
                     const title = rawText.split(' - ')[0] || rawText;
+
+                    const paymentStatus = getPaymentStatus(title);
                     
                     activities.push({
                         title: title,
-                        type: typeInscription
+                        type: typeInscription,
+                        paymentStatus: paymentStatus
                     });
                 }
             });

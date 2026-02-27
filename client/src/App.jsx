@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import Validations from './components/Validations'; // Importe ton nouveau composant
+import Validations from './components/Validations'; 
+import Registration from './components/Registration'; // Nouveau composant d'inscription
 
 const App = () => {
   const [userData, setUserData] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
   
-  // NOUVEAU : L'état qui gère l'ouverture d'une page de créneafhandleLoginSuccessux
+  // NOUVEAU : L'état qui gère l'ouverture d'une page de créneaux
   const [selectedUrl, setSelectedUrl] = useState(null); 
+  const [showRegistration, setShowRegistration] = useState(false); // État pour l'inscription
 
   // Vérification au lancement de l'application
   useEffect(() => {
     if (localStorage.getItem('siuaps_data')) {
+      setIsCheckingSession(true);
       const checkSession = async () => {
         try {
           // 1. On demande à Node.js si sa session est toujours bonne
@@ -74,6 +77,11 @@ const App = () => {
     <div className="app-container">
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
+      ) : showRegistration ? (
+        // PAGE D'INSCRIPTION
+        <Registration 
+          onBack={() => setShowRegistration(false)} 
+        />
       ) : selectedUrl ? (
         // SI UNE URL EST SÉLECTIONNÉE -> ON AFFICHE LES CRÉNEAUX EN PLEIN ÉCRAN
         <Validations 
@@ -86,6 +94,7 @@ const App = () => {
           userData={userData} 
           onLogout={handleLogout}
           onNavigateToSlots={(url) => setSelectedUrl(url)} // On passe la fonction pour changer de page
+          onNavigateToRegistration={() => setShowRegistration(true)} // Nouvelle fonction
         />
       )}
     </div>

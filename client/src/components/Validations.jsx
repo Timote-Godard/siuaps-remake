@@ -198,30 +198,41 @@ const Validations = ({ url, onBack }) => {
         });
     };
 
+
+
+
     return (
-        <div className="animate-in slide-in-from-right duration-500 bg-white p-2 sm:p-4 min-h-[500px] flex flex-col relative pb-10">
+        <div className="w-full max-w-3xl mx-auto bg-white min-h-screen flex flex-col shadow-[0px_0px_20px_rgba(0,0,0,0.1)]">
             
-            <div className="flex justify-between items-center mb-6">
-                <button onClick={onBack} className="flex items-center gap-2 border-2 border-black p-2 font-black uppercase cursor-pointer hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
-                    <ArrowLeft size={20} strokeWidth={3} /> Retour
-                </button>
+            <div className="sticky top-0 z-30 bg-white border-b-4 border-black mb-5 pb-4 pt-4 px-4 sm:px-6">
+                                <div className='flex mb-4 items-center'>
+                    <div className="flex items-center mb-4 gap-4">
+                                        <button onClick={onBack} className="shrink-0 hover:text-white hover:bg-black cursor-pointer flex items-center justify-center w-12 h-12 border-4 border-black font-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
+                                            <ArrowLeft size={24} strokeWidth={4} />
+                                        </button>
+                                        <h1 className="font-black uppercase text-2xl sm:text-3xl tracking-tight leading-none">
+                                            Valider <br/> Creneaux
+                                        </h1>
+                                    </div>
 
-                {/* 3. LE BOUTON ARCHIVE */}
-                <button 
-                    onClick={handleToggleArchive}
-                    className={`cursor-pointer hover:bg-purple-500 active:shadow-none active:translate-x-1 active:translate-y-1 hover:text-white flex items-center gap-2 border-2 border-black p-2 font-black uppercase transition-all
-                        ${isArchiveMode 
-                            ? 'bg-purple-500 text-white shadow-none translate-x-1 translate-y-1' 
-                            : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-                        }`}
-                >
-                    <History size={20} strokeWidth={3} />
-                    Charger Archives
-                </button>
-            </div>
+                    {/* 3. LE BOUTON ARCHIVE */}
 
-            {/* BARRE DE RECHERCHE */}
-            <div className="sticky top-0 z-10 bg-white py-2 mb-6">
+                    
+                        <button 
+                            onClick={handleToggleArchive}
+                            className={`ml-auto h-12 text-lg cursor-pointer hover:bg-purple-500 active:shadow-none active:translate-x-1 active:translate-y-1 hover:text-white flex items-center gap-2 border-4 border-black p-2 font-black uppercase transition-all
+                                ${isArchiveMode 
+                                    ? 'bg-purple-500 text-white shadow-none translate-x-1 translate-y-1' 
+                                    : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+                                }`}
+                        >
+                            <History size={20} strokeWidth={4} />
+                            archives
+                        </button>
+                </div>
+            
+                            {/* BARRE DE RECHERCHE OPTIMISÉE POUCE */}
+                            <div className="sticky top-0 z-10 bg-white py-2">
                 <div className="relative flex items-center w-full">
                     <Search className="absolute left-3 text-gray-500" size={24} strokeWidth={3} />
                     <input 
@@ -234,6 +245,10 @@ const Validations = ({ url, onBack }) => {
                     />
                 </div>
             </div>
+                        </div>
+                
+            
+            
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
@@ -241,7 +256,7 @@ const Validations = ({ url, onBack }) => {
                     <p className="font-bold uppercase italic text-sm">Synchronisation SIUAPS...</p>
                 </div>
             ) : (
-                <div className="space-y-8">
+                <div className="space-y-8 mr-[8px]">
                     {/* ON MAPPE SUR NOS NOUVEAUX BLOCS (Midi/Soir) */}
                     {groupedBlocks.map((block) => {
                         const filteredStudents = block.studentsList.filter(student => 

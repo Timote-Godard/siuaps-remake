@@ -1,23 +1,23 @@
     import React, { useState } from 'react';
 import { ClipboardClock, Dumbbell, BookOpen, UserRound } from 'lucide-react';
 
-const Dashboard = ({ userData, onLogout, onNavigateToSlots }) => {
+const Dashboard = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }) => {
 
     const [activeTab, setActiveTab] = useState("rdv");
     // Variables de style pour simplifier le JSX
     const bgButtonActif = "bg-green-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]";
-    const textButtonActif = "text-white translate-y-[4px] translate-x-[4px] shadow-none"; 
-    const textButtonInActif = "text-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
+    const textButtonActif = "text-white md:translate-y-[4px] md:translate-x-[4px] md:shadow-none"; 
+    const textButtonInActif = "text-gray-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:hover:translate-y-[-2px] md:hover:translate-x-[-2px] md:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
     const bgButtonHover = "hover:bg-green-100 bg-white hover:cursor-pointer";
     
 
-    const bgButtonClickable = "active:text-white active:translate-y-[4px] active:translate-x-[4px] active:shadow-none bg-green-100 hover:cursor-pointer text-green-700 hover:bg-green-600 hover:text-white hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
+    const bgButtonClickable = "active:text-white md:active:translate-y-[4px] md:active:translate-x-[4px] md:active:shadow-none hover:cursor-pointer text-black hover:bg-green-600 hover:text-white md:hover:translate-y-[-2px] md:hover:translate-x-[-2px] md:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
 
     
 
     return (
         // min-h-screen + flex + justify-center pour le centrage absolu
-        <div className='relative min-w-screen min-h-screen pb-24 md:pb-12 bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center bg-fixed flex flex-col justify-center items-center'>
+        <div className='relative min-w-screen min-h-screen pb-24 md:pb-0 bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center bg-fixed flex flex-col justify-center items-center'>
             
             {/* Overlay léger pour la lisibilité si l'image est trop claire/sombre */}
             <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
@@ -35,7 +35,10 @@ const Dashboard = ({ userData, onLogout, onNavigateToSlots }) => {
 
                     {/* Action principale */}
                     <div className='bg-white p-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'>
-                        <button className={`cursor-pointer border-2 border-black px-4 py-3 font-bold w-full ${bgButtonClickable} transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+                        <button 
+                            onClick={onNavigateToRegistration}
+                            className={`cursor-pointer bg-green-200 border-3 border-black px-4 py-3 font-bold w-full ${bgButtonClickable} transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
+                        >
                             S'INSCRIRE À UNE ACTIVITÉ
                         </button>
                     </div>
@@ -104,7 +107,8 @@ const Dashboard = ({ userData, onLogout, onNavigateToSlots }) => {
                                         <h3 className="font-bold text-lg uppercase">{item.title}</h3>
                                         <p className="text-sm text-gray-500 pr-1">{item.type}</p>
                                     </div>
-                                    <span className="border-2 border-black px-3 py-1 text-xs bg-green-600 text-white font-bold italic">PAYÉ</span>
+                                    {item.paymentStatus ? <span className={`border-2 border-black px-3 py-1 text-xs uppercase font-black  ${item.paymentStatus === "paiement à effectuer" ? "bg-rose-600 text-white" : "bg-green-600 text-white"}`}>{item.paymentStatus}</span> : ""}
+                                    
                                 </article>
                             ))}
                             
