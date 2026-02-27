@@ -1,7 +1,7 @@
     import React, { useState } from 'react';
-import { ClipboardClock, Dumbbell, BookOpen, UserRound } from 'lucide-react';
+import { ClipboardClock, Dumbbell, BookOpen, UserRound, ArrowLeft } from 'lucide-react';
 
-const Dashboard = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }) => {
+const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistration }) => {
 
     const [activeTab, setActiveTab] = useState("rdv");
     // Variables de style pour simplifier le JSX
@@ -25,7 +25,11 @@ const Dashboard = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistra
             <div className="relative z-10 w-full max-w-3xl p-4 font-sans animate-in fade-in duration-100">
                 
                 {/* EN-TÊTE */}
-                <header className="mb-6 flex flex-col gap-4">
+                <header className="m    b-6 flex flex-col gap-4">
+
+                    <button onClick={onBack} className="flex items-center gap-2 border-4 border-black text-white cursor-pointer font-black uppercase mb-4 ...">
+                        <ArrowLeft size={20} /> Retour au Hub
+                    </button>
                     {/* Infos profil */}
                     <div className="flex items-center w-full gap-4 bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <h1 className="text-2xl sm:text-3xl font-bold italic tracking-tight">
@@ -165,9 +169,6 @@ const Dashboard = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistra
                             <div className="space-y-4">
                                 <button className="w-full text-left p-4 border-2 border-black font-bold hover:bg-gray-100 transition-colors">
                                     MES INFOS PERSONNELLES
-                                </button>
-                                <button onClick={onLogout} className=" shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] cursor-pointer w-full p-4 border-2 border-black bg-red-100 text-red-700 font-black hover:bg-red-600 hover:text-white transition-all">
-                                    DÉCONNEXION
                                 </button>
                             </div>
                         </section>
