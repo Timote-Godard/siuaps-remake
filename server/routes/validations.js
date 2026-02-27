@@ -164,7 +164,7 @@ router.post('/validations', async (req, res) => {
 
                 const maintenant = new Date();
                 const currentJourNom = maintenant.getDay();
-                const currentNumJour = "20"; //maintenant.getDate()
+                const currentNumJour = maintenant.getDate().toString();
 
                 const dicoJour = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
