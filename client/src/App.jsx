@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import SiuapsDashboard from './components/SiuapsDashboard';
 import Validations from './components/Validations'; 
 import Registration from './components/Registration';
 import Hub from './components/Hub';
@@ -80,16 +80,16 @@ const App = () => {
 
       {currentStep === 'HUB' && (
         <Hub 
-          studentName={userData?.name || "Étudiant"} 
-          onSelect={(choice) => setCurrentStep(choice === 'SIUAPS' ? 'SIUAPS_DASHBOARD' : 'ENT_DASHBOARD')} 
+          userData={userData}
           onLogout={handleLogout}
         />
       )}
 
       {currentStep === 'SIUAPS_DASHBOARD' && (
-        <Dashboard 
+        <SiuapsDashboard 
           userData={userData} 
           onBack={() => setCurrentStep('HUB')} // Nouveau prop pour retourner au Hub !
+          onLogout={handleLogout} // Ajout de onLogout
           onNavigateToSlots={(url) => { 
               setSelectedUrl(url); 
               setCurrentStep('SIUAPS_VALIDATIONS'); 
@@ -108,12 +108,6 @@ const App = () => {
       {currentStep === 'SIUAPS_REGISTRATION' && (
         <Registration 
           onBack={() => setCurrentStep('SIUAPS_DASHBOARD')} 
-        />
-      )}
-
-      {currentStep === 'ENT_DASHBOARD' && (
-        <EntDashboard 
-            onBack={() => setCurrentStep('HUB')}
         />
       )}
 

@@ -1,45 +1,114 @@
-import React from 'react';
-import { Trophy, GraduationCap, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CalendarDays, Dumbbell, Mail, BookOpen } from 'lucide-react';
+import EntDashboard from './EntDashboard';
+import SiuapsDashboard from './SiuapsDashboard';
+import MailDashboard from './MailDashboard'; // 👈 On importe le nouveau dashboard
 
-const Hub = ({ studentName, onSelect, onLogout }) => {
+const Hub = ({ userData, onLogout }) => {
+    const [activeTab, setActiveTab] = useState('AGENDA');
+    const [mailData, setMailData] = useState({ unreadCount: 0, recentMails: [], loading: true });
+
+    useEffect(() => {
+        const fetchMails = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/mails', {
+                    credentials: 'include' 
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    setMailData({
+                        unreadCount: data.unreadCount,
+                        recentMails: data.recentMails,
+                        loading: false
+                    });
+                } else {
+                    setMailData(prev => ({ ...prev, loading: false }));
+                }
+            } catch (err) {
+                setMailData(prev => ({ ...prev, loading: false }));
+            }
+        };
+        fetchMails();
+    }, []);
+
     return (
-        <div className="min-h-screen bg-white p-4 sm:p-8 flex flex-col items-center justify-center max-w-4xl mx-auto animate-in fade-in zoom-in duration-500">
+        <div className="h-screen w-screen flex flex-col bg-[#F0F0F0] overflow-hidden selection:bg-yellow-300">
             
-            <div className="w-full flex justify-between items-center mb-12">
-                <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight">
-                    Bonjour, <br className="sm:hidden" />
-                    <span className="text-black">{studentName}</span>
-                </h1>
+            <div className="flex-1 overflow-y-auto md:pb-20 sm:pb-0"> 
                 
-                <button 
-                    onClick={onLogout}
-                    className="cursor-pointer flex items-center gap-2 border-4 border-black p-2 sm:px-4 sm:py-2 font-black uppercase bg-white hover:bg-red-400 hover:text-black transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
-                >
-                    <LogOut size={20} strokeWidth={3} />
-                    <span className="hidden sm:inline">Quitter</span>
-                </button>
+                {activeTab === 'AGENDA' && (
+                    <EntDashboard onBack={onLogout} />
+                )}
+
+                {activeTab === 'SPORT' && (
+                    <SiuapsDashboard userData={userData} /> 
+                )}
+
+                {/* 🌟 ICI : ON REMPLACE LE BOUTON PAR LE DASHBOARD COMPLET */}
+                {activeTab === 'MAILS' && (
+                    <MailDashboard mailData={mailData} />
+                )}
+
+                {activeTab === 'MOODLE' && (
+                    <div className="h-full flex items-center justify-center border-4 border-black m-4 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <a href="https://moodle.univ-rennes1.fr" target="_blank" rel="noreferrer" className="text-4xl font-black uppercase underline hover:text-green-600">
+                            Ouvrir Moodle
+                        </a>
+                    </div>
+                )}
             </div>
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
+            <nav className="fixed bottom-0 left-0 w-full bg-white border-black flex z-50 shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)] sm:static sm:shadow-none sm:border-t-0 sm:border-b-4">
                 
-                {/* CARTE SIUAPS */}
-                <button 
-                    onClick={() => onSelect('SIUAPS')}
-                    className="cursor-pointer text-left border-4 border-black bg-green-500 p-8 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1 active:shadow-none active:translate-x-2 active:translate-y-2 transition-all flex flex-col items-center md:items-start"
-                >
-                    <h2 className="text-4xl font-black uppercase mb-2 text-center md:text-left">Portail<br/>SIUAPS</h2>
-                </button>
+                <NavButton 
+                    id="AGENDA" current={activeTab} setTab={setActiveTab} 
+                    icon={<CalendarDays size={24} strokeWidth={3} />} label="Agenda" bg="bg-yellow-300"
+                />
+                <NavButton 
+                    id="SPORT" current={activeTab} setTab={setActiveTab} 
+                    icon={<Dumbbell size={24} strokeWidth={3} />} label="Sport" bg="bg-pink-300"
+                />
+                
+                {/* BOUTON NAV MAILS AVEC INDICATEUR */}
+                <NavButton 
+                    id="MAILS" current={activeTab} setTab={setActiveTab} 
+                    icon={
+                        <div className="relative">
+                            <Mail size={24} strokeWidth={3} />
+                            {mailData.unreadCount > 0 && (
+                                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-600 border border-black rounded-full" />
+                            )}
+                        </div>
+                    } 
+                    label="Mails" bg="bg-cyan-300"
+                />
 
-                {/* CARTE ENT */}
-                <button 
-                    onClick={() => onSelect('ENT')}
-                    className="cursor-pointer text-left border-4 border-black bg-cyan-300 p-8 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1 active:shadow-none active:translate-x-2 active:translate-y-2 transition-all flex flex-col items-center md:items-start"
-                >
-                    <h2 className="text-4xl font-black uppercase mb-2 text-center md:text-left">Portail<br/>E.N.T.</h2>
-                </button>
-
-            </div>
+                <NavButton 
+                    id="MOODLE" current={activeTab} setTab={setActiveTab} 
+                    icon={<BookOpen size={24} strokeWidth={3} />} label="Moodle" bg="bg-green-400"
+                />
+                
+            </nav>
         </div>
+    );
+};
+
+const NavButton = ({ id, current, setTab, icon, label, bg }) => {
+    const isActive = current === id;
+    return (
+        <button 
+            onClick={() => setTab(id)}
+            className={`flex-1 py-3 flex flex-col items-center justify-center gap-1 border-r-4 border-black last:border-r-0 transition-all cursor-pointer
+                ${isActive ? `${bg}` : 'bg-white hover:bg-gray-100'}`}
+        >
+            <div className={isActive ? "scale-110 transition-transform" : "opacity-70"}>
+                {icon}
+            </div>
+            <span className={`text-[10px] font-black uppercase ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                {label}
+            </span>
+        </button>
     );
 };
 

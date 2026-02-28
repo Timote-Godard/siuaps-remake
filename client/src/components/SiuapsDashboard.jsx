@@ -1,7 +1,7 @@
     import React, { useState } from 'react';
 import { ClipboardClock, Dumbbell, BookOpen, UserRound, ArrowLeft } from 'lucide-react';
 
-const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistration }) => {
+const SiuapsDashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistration }) => {
 
     const [activeTab, setActiveTab] = useState("rdv");
     // Variables de style pour simplifier le JSX
@@ -17,7 +17,7 @@ const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistrati
 
     return (
         // min-h-screen + flex + justify-center pour le centrage absolu
-        <div className='relative min-w-screen min-h-screen pb-24 md:pb-0 bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center bg-fixed flex flex-col justify-center items-center'>
+        <div className='relative min-w-screen min-h-screen md:pb-24 md:pb-0 bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center bg-fixed flex flex-col items-center'>
             
             {/* Overlay léger pour la lisibilité si l'image est trop claire/sombre */}
             <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
@@ -54,7 +54,7 @@ const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistrati
                 {/* CONTENU PRINCIPAL */}
                 <main className='bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:min-h-[700px] min-h-[400px]'>
 
-                    <nav className="fixed bottom-0 left-0 w-full flex justify-center z-50 md:relative md:bottom-auto md:left-auto md:mb-6 md:z-10">
+                    <nav className="hidden md:block fixed bottom-0 left-0 w-full flex justify-center z-50 md:relative md:bottom-auto md:left-auto md:mb-6 md:z-10">
                     <div className="w-full max-w-3xl flex h-20 md:h-16 gap-3">
                         {[
                             { id: 'rdv', label: 'Agenda', icon: <ClipboardClock size={20} /> },
@@ -177,8 +177,8 @@ const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistrati
             </div>
 
             {/* NAVIGATION FIXE AVEC SHADOW TOP */}
-            <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t-4 border-black flex justify-center z-50 shadow-[0_-8px_20px_-6px_rgba(0,0,0,0.15)]">
-                <div className="w-full max-w-3xl flex h-20">
+            <nav className="fixed bottom-[85px] left-1/2 -translate-x-1/2 w-[90%] sm:w-[400px] z-40">
+                <div className="w-full max-w-3xl gap-4 flex h-20">
                     {[
                         { id: 'rdv', label: 'Agenda', icon: <ClipboardClock size={20} /> },
                         { id: 'activites', label: 'Sports', icon: <Dumbbell size={20} /> },
@@ -201,4 +201,4 @@ const Dashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistrati
     );
 };
 
-export default Dashboard;
+export default SiuapsDashboard;

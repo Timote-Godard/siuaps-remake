@@ -1,29 +1,84 @@
 import express from 'express';
 import * as cheerio from 'cheerio';
 import { client, jar } from '../client.js';
-import puppeteer from 'puppeteer'; // 👈 AJOUTE CECI
 import ical from 'node-ical';
+import fs from 'fs';
 
 const router = express.Router();
 
-import fs from 'fs';
+// =================================================================
+// 🎭 L'UNIFORME STRICT DU ROBOT (Pour éviter le vol de session CAS)
+// =================================================================
+const ROBOT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
+};
+
+
+router.get('/resources', async (req, res) => {
+    try {
+        // On cherche le fichier dans assets ou à la racine
+        const path = fs.existsSync('./ressources.json') ? './ressources.json' : '../client/src/assets/ressources_rennes1.json';
+        if (!fs.existsSync(path)) {
+            return res.json({ success: true, resources: [] });
+        }
+        const data = fs.readFileSync(path, 'utf8');
+        res.json({ success: true, resources: JSON.parse(data) });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Erreur lecture ressources" });
+    }
+});
+
+router.get('/agenda-merged', async (req, res) => {
+    const { resources } = req.query; // Liste d'IDs séparés par des virgules
+    if (!resources) return res.json({ success: true, agenda: [] });
+
+    const url = `https://planning.univ-rennes1.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=${resources}&projectId=1&calType=ical&nbWeeks=4`;
+
+    try {
+        const webEvents = await ical.async.fromURL(url);
+        const uniqueEvents = new Map();
+
+        Object.values(webEvents)
+            .filter(event => event.type === 'VEVENT')
+            .forEach(event => {
+                const key = `${event.summary}-${event.start.toISOString()}-${event.end.toISOString()}`;
+                if (!uniqueEvents.has(key)) {
+                    uniqueEvents.set(key, {
+                        titre: event.summary,
+                        debut: event.start,
+                        fin: event.end,
+                        salle: event.location || "Non précisée",
+                        prof: event.description ? event.description.split('\n')[0] : "Inconnu"
+                    });
+                }
+            });
+
+        const sortedAgenda = Array.from(uniqueEvents.values())
+            .sort((a, b) => new Date(a.debut) - new Date(b.debut));
+
+        res.json({ success: true, agenda: sortedAgenda });
+    } catch (err) {
+        console.error("🔥 Erreur iCal Merged:", err.message);
+        res.status(500).json({ success: false, message: "Impossible de lire le planning fusionné" });
+    }
+});
 
 router.get('/admin/scrape-resources', async (req, res) => {
     try {
         console.log("🕵️ Démarrage de l'aspiration massive des IDs...");
 
-        // On utilise l'URL du sélecteur de ressources d'ADE
         const targetUrl = 'https://planning.univ-rennes1.fr/direct/myplanning.jsp';
         
         const response = await client.get(targetUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36' }
+            headers: { ...ROBOT_HEADERS }
         });
 
         const html = response.data;
         const $ = cheerio.load(html);
         const resources = [];
 
-        // --- STRATÉGIE 1 : Les balises OPTION (Listes déroulantes) ---
         $('option').each((i, el) => {
             const id = $(el).attr('value');
             const name = $(el).text().trim();
@@ -32,8 +87,6 @@ router.get('/admin/scrape-resources', async (req, res) => {
             }
         });
 
-        // --- STRATÉGIE 2 : Extraction Regex dans le code Javascript ---
-        // ADE stocke souvent les branches de l'arbre dans des objets JS au chargement
         const regex = /"id"\s*:\s*(\d+)\s*,\s*"name"\s*:\s*"([^"]+)"/g;
         let match;
         while ((match = regex.exec(html)) !== null) {
@@ -42,7 +95,6 @@ router.get('/admin/scrape-resources', async (req, res) => {
             }
         }
 
-        // --- SAUVEGARDE DANS UN FICHIER JSON ---
         if (resources.length > 0) {
             fs.writeFileSync('./ressources.json', JSON.stringify(resources, null, 2));
             console.log(`✅ Extraction réussie : ${resources.length} IDs sauvegardés dans ressources.json`);
@@ -58,8 +110,6 @@ router.get('/admin/scrape-resources', async (req, res) => {
 
 router.get('/agenda/:resourceId', async (req, res) => {
     const { resourceId } = req.params;
-    
-    // URL d'export direct de Rennes 1 (Pas besoin de login !)
     const url = `https://planning.univ-rennes1.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=${resourceId}&projectId=1&calType=ical&nbWeeks=4`;
 
     try {
@@ -72,10 +122,8 @@ router.get('/agenda/:resourceId', async (req, res) => {
                 debut: event.start,
                 fin: event.end,
                 salle: event.location || "Non précisée",
-                // On nettoie la description pour extraire le prof si possible
                 prof: event.description ? event.description.split('\n')[0] : "Inconnu"
             }))
-            // On trie par date la plus proche
             .sort((a, b) => new Date(a.debut) - new Date(b.debut));
 
         res.json({ success: true, agenda: cours });
@@ -88,11 +136,11 @@ router.get('/agenda/:resourceId', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
+  req.session.username = username;
+  req.session.password = password;
+
   try {
-    // ÉTAPE 1 : On passe le portail en soumettant le choix de l'école
     const wayfUrl = 'https://mon-espace.siuaps.univ-rennes.fr/auth/shibboleth/login.php';
-    
-    // Si tu es à Rennes 2, remplace par 'urn:mace:cru.fr:federation:uhb.fr'
     const myIdp = 'urn:mace:cru.fr:federation:univ-rennes1.fr'; 
 
     console.log("Étape 1 : Envoi du choix de l'école (Université de Rennes)...");
@@ -101,30 +149,23 @@ router.post('/login', async (req, res) => {
     }), {
       maxRedirects: 10,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/121.0.0.0 Safari/537.36'
+        ...ROBOT_HEADERS,
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
 
     const $ = cheerio.load(firstResponse.data);
     const executionToken = $('input[name="execution"]').val();
-    // ==========================================
-    // ÉTAPE 2 : PRÉPARATION ET ENVOI SÉCURISÉ
-    // ==========================================
+    
     const loginActionUrl = firstResponse.request?.res?.responseUrl || firstResponse.config.url;
-
     const formData = new URLSearchParams();
     
-    // 1. Les identifiants purs
     formData.append('username', username);
     formData.append('password', password);
 
-    // 2. On aspire UNIQUEMENT les champs cachés utiles, en esquivant les pièges
     $('input[type="hidden"]').each((i, el) => {
         const name = $(el).attr('name');
-        let value = $(el).attr('value') || ''; // Si pas de valeur, on met vide, pas "undefined"
-        
-        // On évite d'ajouter geolocation si ça le fait planter
+        let value = $(el).attr('value') || ''; 
         if (name && name !== 'geolocation') {
             formData.append(name, value);
         }
@@ -139,6 +180,7 @@ router.post('/login', async (req, res) => {
       maxRedirects: 10,
       validateStatus: () => true, 
       headers: { 
+        ...ROBOT_HEADERS,
         'Content-Type': 'application/x-www-form-urlencoded',
         'Referer': loginActionUrl 
       }
@@ -146,15 +188,23 @@ router.post('/login', async (req, res) => {
 
     console.log("Code HTTP de retour du CAS :", loginResponse.status);
 
-    // ==========================================
-    // C'EST ICI QU'ON DÉFINIT $final !
-    // ==========================================
+    console.log("\n--- AUTOPSIE DU BOCAL APRÈS LOGIN ---");
+    const cookiesDansLeBocal = jar.getCookiesSync('https://sso-cas.univ-rennes.fr');
+    
+    cookiesDansLeBocal.forEach(cookie => {
+        if (cookie.key === 'TGC') {
+            console.log("🔍 COOKIE TGC TROUVÉ ! Voici sa carte d'identité :");
+            console.log(`- Domaine : ${cookie.domain}`);
+            console.log(`- Chemin (Path) : ${cookie.path}`);
+            console.log(`- Secure : ${cookie.secure}`);
+            console.log(`- HttpOnly : ${cookie.httpOnly}`);
+        }
+    });
+    console.log("-------------------------------------\n");
+
     const $final = cheerio.load(loginResponse.data);
     const bodyText = loginResponse.data;
 
-    // ==========================================
-    // ÉTAPE 3 : LE TRANSFERT SAML (Le saut final)
-    // ==========================================
     const samlActionUrl = $final('form').attr('action');
 
     if (samlActionUrl && samlActionUrl.includes('SAML2/POST')) {
@@ -162,18 +212,19 @@ router.post('/login', async (req, res) => {
         
         const samlData = new URLSearchParams();
         
-        // On récupère le "SAMLResponse" (le gros billet d'or crypté) et le "RelayState"
         $final('input[type="hidden"]').each((i, el) => {
             const name = $(el).attr('name');
             const value = $(el).attr('value');
             if (name) samlData.append(name, value);
         });
 
-        // L'envoi final vers le site du SIUAPS
         const finalResponse = await client.post(samlActionUrl, samlData, {
             maxRedirects: 10,
             validateStatus: () => true,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            headers: { 
+                ...ROBOT_HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            }
         });
 
         const $dashboard = cheerio.load(finalResponse.data);
@@ -182,75 +233,62 @@ router.post('/login', async (req, res) => {
         if (finalBodyText.includes('Déconnexion') || finalBodyText.includes('Mon compte') || finalBodyText.includes('Mes inscriptions')) {
             console.log("\n🎉 VICTOIRE ! Connecté au SIUAPS !");
             
-            // ---------------------------------------------------------
-            // 🔥 LE PING SSO : On valide le passe-partout sur ADE
-            // ---------------------------------------------------------
+            const bocalAvantADE = jar.getCookiesSync('https://sso-cas.univ-rennes.fr');
+            const tgcBackup = bocalAvantADE.find(c => c.key === 'TGC');
+            console.log(`[ENQUÊTE] TGC vivant AVANT ADE ? ${tgcBackup ? '🟢 OUI (Sauvegarde en cours...)' : '🔴 NON'}`);
+
             console.log("🔑 Validation silencieuse de la session ADE...");
             await client.get('https://planning.univ-rennes1.fr/direct/myplanning.jsp', {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36' }
+                headers: { ...ROBOT_HEADERS }
             });
             console.log("✅ Session ADE prête !");
-            // ---------------------------------------------------------
+
+            if (tgcBackup) {
+                console.log("🛟 RESTAURATION : ADE a tout cassé, on remet notre TGC de force !");
+                tgcBackup.path = '/'; 
+                jar.setCookieSync(tgcBackup, 'https://sso-cas.univ-rennes.fr');
+            }
+
+            const tgcFinal = jar.getCookiesSync('https://sso-cas.univ-rennes.fr').some(c => c.key === 'TGC');
+            console.log(`[ENQUÊTE] TGC vivant APRÈS RESTAURATION ? ${tgcFinal ? '🟢 OUI' : '🔴 NON'}\n`);
 
             const activities = [];
             const agenda = [];
             const cours = [];
             
-            // On cherche le nom de l'étudiant
             const studentName = $dashboard('.userbutton .usertext').text().trim() || "Étudiant Rennes";
-
-            // LOGIQUE DE SCRAPING (À affiner selon ton retour)
 
             const paymentLegend = {};
             $dashboard('#apsolu-dashboard-payment-legend ul li').each((i, el) => {
-                // On prend le 'title' de l'image comme clé (ex: "dû", "payé")
                 const iconTitle = $(el).find('img').attr('title');
-                // On prend le texte explicatif juste après l'image
                 const label = $(el).text().trim(); 
-                
                 if (iconTitle) {
                     paymentLegend[iconTitle] = label;
                 }
             });
 
-
             const getPaymentStatus = (courseName) => {
-                // On prend le premier mot (ex: "Escalade") en minuscules
                 const firstWord = courseName.split(' ')[0].toLowerCase();
                 let status = null;
 
-                // On parcourt les éléments à payer dans l'onglet #payments
                 $dashboard('#payments > ul.list-unstyled > li').each((i, el) => {
                     const itemText = $(el).text().toLowerCase();
-                    console.log("test");
-                    console.log(itemText);
-                    
-                    // Si la ligne contient le premier mot
                     if (itemText.includes(firstWord)) {
-                        // On récupère le title de l'image de cette ligne
                         const iconTitle = $(el).find('img').attr('title');
-                        
-                        // On fait la correspondance avec notre légende
                         if (iconTitle && paymentLegend[iconTitle]) {
                             status = paymentLegend[iconTitle];
                         }
                     }
                 });
-
-                return status; // Retourne null si le mot n'est pas trouvé
+                return status; 
             };
 
-            // MES ACTIVITES
             $dashboard('#courses > ul > li').each((i, el) => {
                 const rawText = $dashboard(el).find('.card-header').text().trim();
-
                 const typeInscription = $dashboard(el).find('.card-body li').text().trim();
 
                 if (rawText) {
-                    // Logique de découpage : on peut essayer d'isoler le sport 
-                    // Souvent le nom du sport est au début avant les horaires
                     const title = rawText.split(' - ')[0] || rawText;
-
                     const paymentStatus = getPaymentStatus(title);
                     
                     activities.push({
@@ -263,13 +301,9 @@ router.post('/login', async (req, res) => {
 
             console.log(`Sports trouvés : ${activities.length}`);
 
-
-            //MES RENDEZ-VOUS
             $dashboard('#rendez-vous').each((i, el) => {
                 const rawText = $dashboard(el).find('div').text().trim();
-
                 if (rawText) {
-                    
                     agenda.push({
                         title: rawText,
                         type: ""
@@ -279,16 +313,12 @@ router.post('/login', async (req, res) => {
 
             console.log(`Activités trouvées : ${agenda.length}`);
 
-
-            //MES ENSEIGNEMENTS
             $dashboard('#other-teachings').each((i, el) => {
                 const linkElement = $dashboard(el).find('a');
-
                 const title = linkElement.text().trim();
                 const href = linkElement.attr('href');
 
                 if (title) {
-                    
                     cours.push({
                         title: title,
                         link: href || "#"
@@ -298,13 +328,22 @@ router.post('/login', async (req, res) => {
 
             console.log(`Enseignements trouvés : ${cours.length}`);
 
+            const bocalGlobal = jar.getCookiesSync('https://sso-cas.univ-rennes.fr');
+            const tgcVivant = bocalGlobal.find(c => c.key === 'TGC');
             
+            console.log("\n--- BILAN FIN DE LOGIN ---");
+            if (tgcVivant) {
+                console.log("🟢 Le TGC a survécu à SIUAPS et ADE. Il est prêt pour les mails !");
+            } else {
+                console.log("🔴 ASSASSINAT DÉTECTÉ : Le TGC a été tué pendant le scraping de SIUAPS ou ADE !");
+            }
+            console.log("--------------------------\n");
 
             return res.json({ 
                 success: true, 
                 user: { 
                     name: studentName, 
-                    activites: activities, // On envoie les VRAIS sports !
+                    activites: activities, 
                     agenda: agenda,
                     cours: cours,
                 } 
@@ -323,61 +362,91 @@ router.post('/login', async (req, res) => {
     }
   } catch (error) {
     console.error("\n🔥 ERREUR CRASH NODE.JS :");
-    console.error(error.message); // Affiche la cause exacte
-    console.error(error.stack.split('\n')[1]); // Affiche la ligne du bug
+    console.error(error.message); 
+    if(error.stack) console.error(error.stack.split('\n')[1]); 
     res.status(500).json({ success: false, message: "Crash serveur : " + error.message });
   }
 });
 
-// 🗝️ FONCTION MAÎTRESSE POUR ACCÉDER À N'IMPORTE QUEL SERVICE DE RENNES 1
-async function fetchProtectedService(targetUrl) {
+// 🗝️ FONCTION MAÎTRESSE : LE PASSE-PARTOUT "DOUBLE LOGIN"
+async function fetchProtectedService(targetUrl, username = null, password = null) {
     console.log(`\n🚀 Tentative d'accès sécurisé à : ${targetUrl}`);
     
-    const stealthHeaders = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    };
+    const stealthHeaders = { ...ROBOT_HEADERS };
 
-    // 💡 LA CORRECTION EST ICI : On commence directement sur l'URL cible (ADE). 
-    // ADE va nous rediriger de lui-même vers le VRAI lien du CAS !
     let currentUrl = targetUrl;
     let response;
     
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 30; i++) {
         response = await client.get(currentUrl, {
-            maxRedirects: 0, // On suit le chemin manuellement
+            maxRedirects: 0, 
             validateStatus: () => true,
             headers: stealthHeaders
         });
 
-        const $ = cheerio.load(response.data);
-        const samlActionUrl = $('form').attr('action');
+        let $ = cheerio.load(response.data);
+        
+        const isCasLoginPage = $('input[name="username"]').length > 0 && $('input[name="password"]').length > 0;
+        
+        if (isCasLoginPage && username && password) {
+            console.log(`🛡️ Mur CAS détecté ! Injection tactique des identifiants...`);
+            
+            const loginData = new URLSearchParams();
+            loginData.append('username', username);
+            loginData.append('password', password);
 
-        // SI ON TOMBE SUR UN FORMULAIRE SAML (Le billet d'or)
-        if (samlActionUrl && (samlActionUrl.includes('SAML2/POST') || samlActionUrl.includes('Shibboleth.sso'))) {
-            console.log("🎟️ Formulaire SAML détecté sur " + currentUrl);
+            $('input[type="hidden"]').each((_, el) => {
+                const name = $(el).attr('name');
+                if (name && name !== 'geolocation') loginData.append(name, $(el).attr('value') || '');
+            });
+
+            let postUrl = $('form').attr('action') || currentUrl;
+            if (!postUrl.startsWith('http')) postUrl = new URL(currentUrl).origin + (postUrl.startsWith('/') ? '' : '/') + postUrl;
+
+            response = await client.post(postUrl, loginData.toString(), {
+                maxRedirects: 0,
+                validateStatus: () => true,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Referer': currentUrl, ...stealthHeaders }
+            });
+            
+            $ = cheerio.load(response.data);
+        }
+
+        const formAction = $('form').attr('action') || '';
+        const isSamlForm = formAction && (
+            $('input[name="SAMLResponse"]').length > 0 ||
+            $('input[name="RelayState"]').length > 0 ||
+            $('form').attr('id') === 'autosubmit' ||
+            formAction.includes('SAML2/POST') ||
+            formAction.includes('Shibboleth.sso')
+        );
+
+        if (isSamlForm) {
+            console.log(`🎟️ Billet SAML détecté. Validation automatique...`);
             const samlData = new URLSearchParams();
             $('input[type="hidden"]').each((_, el) => {
                 const name = $(el).attr('name');
-                if (name) samlData.append(name, $(el).attr('value'));
+                if (name) samlData.append(name, $(el).attr('value') || '');
             });
 
-            response = await client.post(samlActionUrl, samlData, {
+            let postUrl = formAction;
+            if (!postUrl.startsWith('http')) postUrl = new URL(currentUrl).origin + (postUrl.startsWith('/') ? '' : '/') + postUrl;
+
+            response = await client.post(postUrl, samlData.toString(), {
                 maxRedirects: 0,
                 validateStatus: () => true,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...stealthHeaders }
             });
         }
 
-        // GESTION DES REDIRECTIONS
         if (response.status >= 300 && response.status < 400 && response.headers.location) {
             let nextUrl = response.headers.location;
-            if (!nextUrl.startsWith('http')) {
-                nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
-            }
-            console.log(`➡️ Redirection vers : ${nextUrl.split('?')[0]}...`); // Affiche juste le début de l'URL pour pas polluer
+            if (!nextUrl.startsWith('http')) nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+            
+            console.log(`➡️ Redirection vers : ${nextUrl.split('?')[0]}...`);
             currentUrl = nextUrl;
-        } else {
-            // FIN DU VOYAGE
+        } 
+        else if (response.status === 200 && !isSamlForm && !isCasLoginPage) {
             console.log(`✅ Arrivé à destination sur : ${currentUrl}`);
             break; 
         }
@@ -386,110 +455,323 @@ async function fetchProtectedService(targetUrl) {
     return cheerio.load(response.data);
 }
 
-router.get('/agenda', async (req, res) => {
-    let browser;
+// =================================================================
+// 🛠️ FONCTION DE SECOURS : RECONNEXION INVISIBLE AU CAS
+// =================================================================
+async function relancerSessionCAS(username, password) {
     try {
-        console.log("\n📅 [AGENDA] 1. Invocation du Navigateur Fantôme...");
+        console.log("🔄 [AUTO-LOGIN] Relance de la session CAS en arrière-plan...");
         
-        // On lance un vrai Google Chrome invisible
-        browser = await puppeteer.launch({ 
-            headless: "new", // Mode invisible
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
+        const wayfUrl = 'https://mon-espace.siuaps.univ-rennes.fr/auth/shibboleth/login.php';
+        const myIdp = 'urn:mace:cru.fr:federation:univ-rennes1.fr'; 
 
-        console.log("📅 [AGENDA] 2. Transfert des cookies de session...");
-        
-        // 🌟 LA MAGIE EST ICI : On vole les cookies d'Axios pour les donner à Puppeteer
-        const adeCookies = jar.getCookiesSync('https://planning.univ-rennes1.fr').map(c => ({
-            name: c.key, value: c.value, domain: 'planning.univ-rennes1.fr'
-        }));
-        const casCookies = jar.getCookiesSync('https://sso-cas.univ-rennes.fr').map(c => ({
-            name: c.key, value: c.value, domain: 'sso-cas.univ-rennes.fr'
-        }));
-
-        // On injecte les passe-partouts dans le navigateur fantôme
-        await page.setCookie(...adeCookies, ...casCookies);
-
-        console.log("📅 [AGENDA] 3. Navigation furtive vers ADE Campus...");
-        // On va sur ADE. Comme on a les cookies, pas besoin de taper le mot de passe !
-        await page.goto('https://planning.univ-rennes1.fr/direct/myplanning.jsp', { 
-            waitUntil: 'networkidle2', // On attend que la page ait fini de charger
-            timeout: 30000 
+        const firstResponse = await client.post(wayfUrl, new URLSearchParams({ idp: myIdp }), {
+            maxRedirects: 10,
+            headers: { 
+                ...ROBOT_HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            }
         });
 
-        console.log("📅 [AGENDA] 4. Attente de l'affichage de la grille...");
-        // On attend qu'au moins un cours apparaisse à l'écran
-        await page.waitForSelector('.eventText', { timeout: 15000 });
+        const $ = cheerio.load(firstResponse.data);
+        const loginActionUrl = firstResponse.request?.res?.responseUrl || firstResponse.config.url;
 
-        console.log("📅 [AGENDA] 5. Aspiration des données...");
-        // On exécute du code directement DANS le navigateur fantôme pour scraper le HTML
-        const cours = await page.evaluate(() => {
-            const result = [];
-            document.querySelectorAll('div.eventText').forEach(el => {
-                const htmlContent = el.innerHTML;
-                if (htmlContent) {
-                    const lignes = htmlContent
-                        .split('<br>')
-                        .map(ligne => ligne.replace(/<[^>]*>?/gm, '').trim())
-                        .filter(ligne => ligne.length > 0);
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
 
-                    if (lignes.length >= 4) {
-                        const horaires = lignes[3].split(' - ');
-                        result.push({
-                            titre: lignes[0],
-                            prof: lignes[1],
-                            salle: lignes[2],
-                            horaires: lignes[3],
-                            groupes: [lignes[4] || ""]
-                        });
-                    }
-                }
+        $('input[type="hidden"]').each((i, el) => {
+            const name = $(el).attr('name');
+            if (name && name !== 'geolocation') formData.append(name, $(el).attr('value') || '');
+        });
+
+        const loginResponse = await client.post(loginActionUrl, formData, {
+            maxRedirects: 10,
+            validateStatus: () => true, 
+            headers: { 
+                ...ROBOT_HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            }
+        });
+
+        const $final = cheerio.load(loginResponse.data);
+        const samlActionUrl = $final('form').attr('action');
+
+        if (samlActionUrl && samlActionUrl.includes('SAML2/POST')) {
+            console.log("✅ [AUTO-LOGIN] Cookies rafraîchis avec succès !");
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error("🔥 [AUTO-LOGIN] Échec :", error.message);
+        return false;
+    }
+}   
+
+
+// -----------------------------------------------------------------
+// ROUTE MAILS (100% Cookies, Crawler Manuel, Uniforme Strict)
+// -----------------------------------------------------------------
+router.get('/mails', async (req, res) => {
+    try {
+        console.log("\n🚀 [MAILS] 1. Démarrage du Crawler Manuel vers Zimbra...");
+
+        let currentUrl = 'https://partage.univ-rennes1.fr/';
+        let response;
+        let authReussie = false;
+
+        for (let i = 0; i < 30; i++) {
+            console.log(`\n[SAUT ${i + 1}] 🌐 URL : ${currentUrl.split('?')[0]}`);
+
+            const bocalGlobal = jar.getCookiesSync('https://sso-cas.univ-rennes.fr');
+            const tgc = bocalGlobal.find(c => c.key === 'TGC');
+            
+            if (tgc) {
+                console.log(`[SAUT ${i + 1}] 🟢 TGC est VIVANT dans le bocal ! (SameSite: ${tgc.sameSite || 'Non défini'})`);
+            } else {
+                console.log(`[SAUT ${i + 1}] 🔴 ALERTE : Le TGC n'existe plus dans le bocal !`);
+            }
+
+            const cookiesForUrl = jar.getCookiesSync(currentUrl);
+            const cookieNames = cookiesForUrl.map(c => c.key).join(', ') || 'AUCUN';
+            console.log(`[SAUT ${i + 1}] 🍪 Cookies autorisés pour ce saut : ${cookieNames}`);
+
+            // 🎭 On enfile l'uniforme !
+            const specificHeaders = { ...ROBOT_HEADERS };
+            
+            // Si on saute vers le CAS, on fait croire qu'on vient de Shibboleth
+            if (currentUrl.includes('sso-cas.univ-rennes.fr')) {
+                specificHeaders['Referer'] = 'https://ident-shib.univ-rennes1.fr/';
+            }
+
+            response = await client.get(currentUrl, {
+                maxRedirects: 0,
+                validateStatus: () => true,
+                headers: specificHeaders
             });
-            return result;
+
+            console.log(`[SAUT ${i + 1}] 📥 Réponse HTTP : ${response.status}`);
+
+            if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                let nextUrl = response.headers.location;
+                if (!nextUrl.startsWith('http')) nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+                
+                if (nextUrl.includes('/service/preauth')) {
+                    console.log(`[SAUT ${i + 1}] 💎 URL Preauth détectée ! C'est elle qui donne le token !`);
+                }
+                
+                currentUrl = nextUrl;
+                continue;
+            }
+
+            // =======================================================
+            // Cas B : Formulaires de Rebond (SAML ou Auto-Submit)
+            // =======================================================
+            const $ = cheerio.load(typeof response.data === 'string' ? response.data : '');
+            const formAction = $('form').attr('action') || '';
+            const isAutoSubmit = formAction && (
+                $('input[name="SAMLResponse"]').length > 0 || 
+                $('input[name="RelayState"]').length > 0 ||
+                $('form').attr('id') === 'autosubmit' ||
+                $('body').attr('onload')?.includes('submit')
+            );
+
+            if (isAutoSubmit) {
+                console.log(`[SAUT ${i + 1}] 🎟️ Formulaire de rebond détecté vers : ${formAction.substring(0, 50)}...`);
+                const formData = new URLSearchParams();
+                $('input[type="hidden"], input[type="text"]').each((_, el) => {
+                    const name = $(el).attr('name');
+                    if (name) formData.append(name, $(el).attr('value') || '');
+                });
+
+                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + formAction;
+                
+                response = await client.post(postUrl, formData.toString(), {
+                    maxRedirects: 0,
+                    validateStatus: () => true,
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        ...ROBOT_HEADERS 
+                    }
+                });
+
+                if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                    let nextUrl = response.headers.location;
+                    if (!nextUrl.startsWith('http')) nextUrl = new URL(postUrl).origin + nextUrl;
+                    currentUrl = nextUrl;
+                    continue;
+                }
+            }
+
+            // =======================================================
+            // Cas C : La Redirection invisible JS (Meta-Refresh)
+            // Très utilisée par Renater pour sauter vers Zimbra
+            // =======================================================
+            const metaRefresh = $('meta[http-equiv="refresh"]').attr('content') || $('meta[http-equiv="Refresh"]').attr('content');
+            if (metaRefresh && !isAutoSubmit) {
+                const match = metaRefresh.match(/url=['"]?([^'"]+)['"]?/i);
+                if (match && match[1]) {
+                    console.log(`[SAUT ${i + 1}] 🔄 Meta-Refresh détecté vers : ${match[1].substring(0, 50)}...`);
+                    let nextUrl = match[1];
+                    if (!nextUrl.startsWith('http')) nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+                    currentUrl = nextUrl;
+                    continue;
+                }
+            }
+
+            // =======================================================
+            // Cas D : Atterrissage définitif sur une page (Code 200)
+            // =======================================================
+            if (response.status === 200 && !isAutoSubmit && !metaRefresh) {
+                if ($('input[name="username"]').length > 0) {
+                    console.log(`[SAUT ${i + 1}] ❌ MUR CAS ! Le cookie TGC n'a pas été reconnu.`);
+                    break;
+                }
+                
+                // On vérifie qu'on a bien notre récompense avant de crier victoire
+                const bocalZimbra = jar.getCookiesSync('https://partage.univ-rennes1.fr');
+                if (bocalZimbra.some(c => c.key === 'ZM_AUTH_TOKEN')) {
+                    console.log(`[SAUT ${i + 1}] ✅ Atterrissage final validé, ZM_AUTH_TOKEN en poche !`);
+                    authReussie = true;
+                } else {
+                    console.log(`[SAUT ${i + 1}] ⚠️ Page 200 atteinte sur ${currentUrl}, mais pas de jeton Zimbra. On continue d'attendre ou c'est une impasse.`);
+                }
+                break;
+            }
+        
+        }
+
+        if (!authReussie) return res.status(401).json({ success: false, message: "Bloqué par le CAS." });
+
+        const zimbraCookies = jar.getCookiesSync('https://partage.univ-rennes1.fr');
+        if (!zimbraCookies.some(c => c.key === 'ZM_AUTH_TOKEN')) {
+            console.log("❌ JETON MANQUANT : Le ZM_AUTH_TOKEN n'a pas été trouvé dans le pot.");
+            return res.status(401).json({ success: false, message: "Jeton Zimbra introuvable." });
+        }
+
+        // =======================================================
+        // 3. RÉCUPÉRATION VIA L'API JSON (PAS DE TRONCATURE)
+        // =======================================================
+        console.log("💎 [MAILS] Accès à l'API JSON pour éviter les '...'");
+
+        // On demande les 20 derniers messages du dossier "inbox" en JSON
+        const jsonUrl = 'https://partage.univ-rennes1.fr/home/~/inbox.json?limit=20';
+
+        const mailResponse = await client.get(jsonUrl, {
+            headers: ROBOT_HEADERS // Le ZM_AUTH_TOKEN fait tout le travail
         });
 
-        // On ferme le navigateur fantôme pour libérer la RAM
-        await browser.close();
+        const data = mailResponse.data;
+        const mails = [];
+        let unreadCount = 0;
 
-        console.log(`✅ [AGENDA] Succès absolu : ${cours.length} cours récupérés !`);
-        res.json({ success: true, agenda: cours });
+        // Zimbra renvoie un objet m (messages)
+        if (data.m) {
+            data.m.forEach((msg, index) => {
+                // f: "u" signifie unread (non lu)
+                const isUnread = msg.f && msg.f.includes('u');
+                if (isUnread) unreadCount++;
+
+                mails.push({
+                    id: msg.id,
+                    // e: [ {d: "Nom", a: "email"} ] -> on prend le premier expéditeur
+                    sender: msg.e && msg.e[0] ? (msg.e[0].d || msg.e[0].a) : "Inconnu",
+                    subject: msg.su || "(Sans objet)", // su: Subject (COMPLET !)
+                    isUnread: !!isUnread,
+                    date: new Date(msg.d).toLocaleDateString('fr-FR') // d: Date timestamp
+                });
+            });
+        }
+
+        console.log(`🏆 [MAILS] Victoire ! ${mails.length} mails complets récupérés.`);
+
+        res.json({ 
+            success: true, 
+            unreadCount, 
+            recentMails: mails 
+        });
 
     } catch (error) {
-        if (browser) await browser.close(); // Sécurité pour fermer le navigateur en cas de crash
-        console.error("🔥 ERREUR AGENDA PUPPETEER :", error.message);
-        res.status(500).json({ success: false, message: "Impossible de scraper ADE Campus." });
+        console.error("🔥 ERREUR ZIMBRA :", error.message);
+        res.status(500).json({ success: false });
     }
 });
 
-router.get('/mails', async (req, res) => {
-    // ⚠️ Version suspendue temporairement pour tester l'agenda
-    console.log("📧 [MAILS] Scraping désactivé temporairement.");
-    res.json({ success: true, mails: [] });
+// Fonction utilitaire pour fouiller dans l'oignon Zimbra
+function findMailBody(part) {
+    // Si cette partie a du contenu direct, c'est gagné !
+    if (part.content && (part.ct === 'text/html' || part.ct === 'text/plain')) {
+        return { content: part.content, type: part.ct };
+    }
+    // Sinon, si elle a des sous-parties (mp), on fouille dedans
+    if (part.mp) {
+        for (const subPart of part.mp) {
+            const found = findMailBody(subPart);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+router.get('/mail/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        console.log(`📖 [MAIL] Extraction via Vue Impression du message ID: ${id}`);
+
+        // On utilise la vue Print de Zimbra (le Graal du scraping)
+        const response = await client.get(`https://partage.univ-rennes1.fr/h/printmessage?id=${id}`, {
+            headers: ROBOT_HEADERS,
+            responseType: 'text'
+        });
+
+        const $ = cheerio.load(response.data);
+        
+        // 1. On cible spécifiquement la boîte qui contient le vrai message
+        let $mailBody = $('#iframeBody.MsgBody-html');
+
+        // Sécurité si Zimbra change l'ID
+        if ($mailBody.length === 0) {
+            $mailBody = $('.Msg');
+        }
+
+        // 2. LE GRAND COUP DE BALAI
+        // On supprime les styles globaux et les scripts de la page d'impression
+        $mailBody.find('style, script, link, meta, title').remove();
+
+        // On enlève les styles "en ligne" pour que ton CSS React prenne le dessus
+        $mailBody.find('*').removeAttr('style').removeAttr('class');
+
+        let cleanHtml = $mailBody.html();
+
+        if (!cleanHtml || cleanHtml.trim() === '') {
+            cleanHtml = "<p>⚠️ Contenu introuvable. Ce message est peut-être chiffré ou vide.</p>";
+        }
+
+        res.json({ success: true, body: cleanHtml });
+    } catch (error) {
+        console.error("🔥 ERREUR LECTURE MAIL :", error.message);
+        res.status(500).json({ success: false, message: "Impossible de lire le mail." });
+    }
 });
 
 router.get('/fetch-ent', async (req, res) => {
     try {
         console.log("\n🔄 [ENT] Tentative de connexion silencieuse via le SSO...");
 
-        let currentUrl = 'https://ent.univ-rennes1.fr/Login'; // La porte d'entrée
+        let currentUrl = 'https://ent.univ-rennes1.fr/Login'; 
         let entResponse;
         let $ent;
 
-        // 🕵️ LE TRACEUR MANUEL (La parade anti-bugs de cookies)
         for (let i = 0; i < 10; i++) {
             entResponse = await client.get(currentUrl, {
-                maxRedirects: 0, // 🛑 On interdit à Axios de courir tout seul !
+                maxRedirects: 0, 
                 validateStatus: () => true,
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+                headers: { ...ROBOT_HEADERS }
             });
 
-            // On charge le HTML de l'étape actuelle
             $ent = cheerio.load(entResponse.data);
 
-            // ==========================================
-            // PIÈGE #1 : Le Formulaire SAML caché
-            // ==========================================
             const samlActionUrl = $ent('form').attr('action');
             if (samlActionUrl && (samlActionUrl.includes('SAML2/POST') || samlActionUrl.includes('Shibboleth.sso'))) {
                 console.log("🎟️ Formulaire SAML détecté ! Validation manuelle...");
@@ -501,38 +783,33 @@ router.get('/fetch-ent', async (req, res) => {
                 });
 
                 entResponse = await client.post(samlActionUrl, samlData, {
-                    maxRedirects: 0, // Toujours en manuel
+                    maxRedirects: 0, 
                     validateStatus: () => true,
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        ...ROBOT_HEADERS 
+                    }
                 });
             }
 
-            // ==========================================
-            // PIÈGE #2 : La Redirection Classique (302)
-            // ==========================================
             if (entResponse.status >= 300 && entResponse.status < 400 && entResponse.headers.location) {
                 let nextUrl = entResponse.headers.location;
-                
-                // Si l'URL de redirection est relative (ex: "/f/welcome...") on la reconstruit
                 if (!nextUrl.startsWith('http')) {
                     const baseUrl = new URL(currentUrl).origin;
                     nextUrl = baseUrl + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
                 }
                 
                 console.log(`➡️ Redirection (${entResponse.status}) vers : ${nextUrl}`);
-                currentUrl = nextUrl; // On met à jour l'URL pour le prochain tour de boucle
+                currentUrl = nextUrl; 
             } else {
-                // Si ce n'est pas une redirection et pas un formulaire SAML, on est arrivé à destination !
                 console.log(`✅ Atterrissage final sur : ${currentUrl} (Status: ${entResponse.status})`);
-                break; // On sort de la boucle
+                break; 
             }
         }
 
-        // On recharge le HTML final
         $ent = cheerio.load(entResponse.data);
         const html = entResponse.data;
 
-        // 2. Vérification finale
         const hasLogout = html.toLowerCase().includes('logout') || html.toLowerCase().includes('déconnexion');
         const isPublicPage = html.toLowerCase().includes('identifiez-vous');
 
@@ -542,12 +819,7 @@ router.get('/fetch-ent', async (req, res) => {
         }
 
         console.log("🎉 [ENT] Accès accordé en silence !");
-
-        // ----------------------------------------------------
-        // 3. ⛏️ SCRAPING DES DONNÉES
-        // ----------------------------------------------------
         
-        // Cible souvent utilisée dans uPortal pour afficher le nom
         const studentName = $ent('.user-name').first().text().trim() || "Étudiant(e)";
 
         const widgets = [];
@@ -572,19 +844,17 @@ router.get('/fetch-ent', async (req, res) => {
 
 router.get('/verify', async (req, res) => {
     try {
-        // On tente d'accéder à l'accueil du SIUAPS avec les cookies en mémoire
         const response = await client.get('https://mon-espace.siuaps.univ-rennes.fr/', {
             maxRedirects: 5,
-            validateStatus: () => true
+            validateStatus: () => true,
+            headers: { ...ROBOT_HEADERS }
         });
 
         const html = response.data;
 
-        // Si la page contient "Déconnexion" ou "Mon compte", on est toujours loggé !
         if (html.includes('Déconnexion') || html.includes('Mon compte')) {
             return res.json({ success: true, message: "Session CAS toujours active" });
         } else {
-            // Sinon, le CAS nous a jeté (session expirée)
             return res.status(401).json({ success: false, message: "Session expirée" });
         }
     } catch (error) {
@@ -594,7 +864,7 @@ router.get('/verify', async (req, res) => {
 
 
 router.post('/logout', (req, res) => {
-    jar.removeAllCookiesSync(); // Vide la mémoire de Node.js
+    jar.removeAllCookiesSync(); 
     res.json({ success: true });
 });
 
