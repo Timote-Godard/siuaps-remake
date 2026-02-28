@@ -9,6 +9,7 @@ import EntDashboard from './components/EntDashboard'; // À créer plus tard
 const App = () => {
   const [userData, setUserData] = useState(null);
   const [isCheckingSession, setIsCheckingSession] = useState(false);
+  const [activeTab, setActiveTab] = useState('AGENDA');
   
   // 🧭 LA BOUSSOLE DE L'APPLICATION (Au lieu des vieux booléens)
   // Valeurs possibles : 'LOGIN', 'HUB', 'SIUAPS_DASHBOARD', 'SIUAPS_VALIDATIONS', 'SIUAPS_REGISTRATION', 'ENT_DASHBOARD'
@@ -82,18 +83,12 @@ const App = () => {
         <Hub 
           userData={userData}
           onLogout={handleLogout}
-        />
-      )}
-
-      {currentStep === 'SIUAPS_DASHBOARD' && (
-        <SiuapsDashboard 
-          userData={userData} 
-          onBack={() => setCurrentStep('HUB')} // Nouveau prop pour retourner au Hub !
-          onLogout={handleLogout} // Ajout de onLogout
           onNavigateToSlots={(url) => { 
               setSelectedUrl(url); 
               setCurrentStep('SIUAPS_VALIDATIONS'); 
           }}
+          setActiveTab={setActiveTab}
+          activeTab={activeTab}
           onNavigateToRegistration={() => setCurrentStep('SIUAPS_REGISTRATION')}
         />
       )}
@@ -101,13 +96,13 @@ const App = () => {
       {currentStep === 'SIUAPS_VALIDATIONS' && (
         <Validations 
           url={selectedUrl} 
-          onBack={() => setCurrentStep('SIUAPS_DASHBOARD')} 
+          onBack={() => {setCurrentStep('HUB'); setActiveTab('SPORT'); console.log(activeTab)}} 
         />
       )}
 
       {currentStep === 'SIUAPS_REGISTRATION' && (
         <Registration 
-          onBack={() => setCurrentStep('SIUAPS_DASHBOARD')} 
+          onBack={() => setCurrentStep('HUB')} 
         />
       )}
 

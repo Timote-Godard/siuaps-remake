@@ -4,7 +4,7 @@ import EntDashboard from './EntDashboard';
 import SiuapsDashboard from './SiuapsDashboard';
 import MailDashboard from './MailDashboard'; // 👈 On importe le nouveau dashboard
 
-const Hub = ({ userData, onLogout }) => {
+const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }) => {
     const [activeTab, setActiveTab] = useState('AGENDA');
     const [mailData, setMailData] = useState({ unreadCount: 0, recentMails: [], loading: true });
 
@@ -42,7 +42,12 @@ const Hub = ({ userData, onLogout }) => {
                 )}
 
                 {activeTab === 'SPORT' && (
-                    <SiuapsDashboard userData={userData} /> 
+                    <SiuapsDashboard 
+                        userData={userData} 
+                        onBack={() => setActiveTab('AGENDA')}
+                        onNavigateToSlots={onNavigateToSlots}
+                        onNavigateToRegistration={onNavigateToRegistration}
+                    /> 
                 )}
 
                 {/* 🌟 ICI : ON REMPLACE LE BOUTON PAR LE DASHBOARD COMPLET */}

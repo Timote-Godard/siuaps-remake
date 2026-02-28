@@ -1,7 +1,7 @@
     import React, { useState } from 'react';
 import { ClipboardClock, Dumbbell, BookOpen, UserRound, ArrowLeft } from 'lucide-react';
 
-const SiuapsDashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegistration }) => {
+const SiuapsDashboard = ({ userData, onNavigateToSlots, onNavigateToRegistration }) => {
 
     const [activeTab, setActiveTab] = useState("rdv");
     // Variables de style pour simplifier le JSX
@@ -26,10 +26,6 @@ const SiuapsDashboard = ({ userData, onBack, onNavigateToSlots, onNavigateToRegi
                 
                 {/* EN-TÊTE */}
                 <header className="m    b-6 flex flex-col gap-4">
-
-                    <button onClick={onBack} className="flex items-center gap-2 border-4 border-black text-white cursor-pointer font-black uppercase mb-4 ...">
-                        <ArrowLeft size={20} /> Retour au Hub
-                    </button>
                     {/* Infos profil */}
                     <div className="flex items-center w-full gap-4 bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                         <h1 className="text-2xl sm:text-3xl font-bold italic tracking-tight">
