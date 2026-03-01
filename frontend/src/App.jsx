@@ -24,7 +24,7 @@ const App = () => {
       setIsCheckingSession(true);
       const checkSession = async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/verify');
+          const res = await fetch('https://7c34f7875b6405.lhr.life/api/verify');
           const data = await res.json();
 
           if (data.success) {
@@ -51,7 +51,7 @@ const App = () => {
 
     const fetchMails = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/mails', {
+                const res = await fetch('https://7c34f7875b6405.lhr.life/api/mails', {
                     credentials: 'include' 
                 });
                 const data = await res.json();
@@ -76,7 +76,7 @@ const App = () => {
 
   // 2. ACTIONS GLOBALES
   const handleLogout = async () => {
-    await fetch('http://localhost:5000/api/logout', { method: 'POST' });
+    await fetch('https://7c34f7875b6405.lhr.life/api/logout', { method: 'POST' });
     setUserData(null);
     localStorage.removeItem('siuaps_data');
     setCurrentStep('LOGIN'); // Retour à la case départ
