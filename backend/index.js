@@ -12,10 +12,7 @@ const app = express();
 // ========================================================
 // 1. LE CORS EN TOUT PREMIER (Le videur de la boîte de nuit)
 // ========================================================
-app.use(cors({
-    origin: 'http://localhost:5173', // Ton adresse React
-    credentials: true // 🌟 AUTORISE LE BRACELET VIP (SESSION)
-}));
+app.use(cors()); // Autorise TOUT le monde
 
 // ========================================================
 // 2. LA SESSION (Le gestionnaire de mémoire)
