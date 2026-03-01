@@ -36,10 +36,10 @@ const Login = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className='relative min-w-screen min-h-screen flex items-center justify-center bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center'>
+    <div className='relative min-w-screen min-h-screen flex items-center justify-center'>
       
       {/* Overlay pour assombrir le fond et faire ressortir le formulaire */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+      <div className=""></div>
 
       <div className="relative z-10 w-full max-w-sm p-6">
         <form 
@@ -64,7 +64,7 @@ const Login = ({ onLoginSuccess }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full border-2 border-black p-3 font-bold focus:outline-none focus:bg-green-50 placeholder:text-gray-300"
+                className="w-full border-2 border-black p-3 font-bold focus:outline-none placeholder:text-gray-300"
                 placeholder="ex: pnom01"
                 required
               />
@@ -76,7 +76,7 @@ const Login = ({ onLoginSuccess }) => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border-2 border-black p-3 font-bold focus:outline-none focus:bg-green-50 placeholder:text-gray-300"
+                className="w-full border-2 border-black p-3 font-bold focus:outline-none placeholder:text-gray-300"
                 placeholder="••••••••"
                 required
               />
@@ -85,7 +85,7 @@ const Login = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full border-4 border-black p-4 font-black uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${
+              className={`cursor-pointer w-full border-4 border-black p-4 font-black uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 ${
                 loading ? 'bg-gray-200 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400 text-black'
               }`}
             >

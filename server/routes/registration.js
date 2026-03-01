@@ -12,18 +12,7 @@ router.get('/registration-data', async (req, res) => {
 
         const activities = [];
         let currentActivity = null;
-
-        const paymentLegend = {};
-        $('#apsolu-dashboard-payment-legend ul li').each((i, el) => {
-            // On prend le 'title' de l'image comme clé (ex: "dû", "payé")
-            const iconTitle = $(el).find('img').attr('title');
-            // On prend le texte explicatif juste après l'image
-            const label = $(el).text().trim(); 
-            
-            if (iconTitle) {
-                paymentLegend[iconTitle] = label;
-            }
-        });
+        
 
         $('#apsolu-activities-table tbody tr').each((i, el) => {
             const $row = $(el);

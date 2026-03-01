@@ -10,11 +10,13 @@ const App = () => {
   const [userData, setUserData] = useState(null);
   const [isCheckingSession, setIsCheckingSession] = useState(false);
   const [activeTab, setActiveTab] = useState('AGENDA');
+  const [activeTabSiuaps, setActiveTabSiuaps] = useState("rdv");
   
   // 🧭 LA BOUSSOLE DE L'APPLICATION (Au lieu des vieux booléens)
   // Valeurs possibles : 'LOGIN', 'HUB', 'SIUAPS_DASHBOARD', 'SIUAPS_VALIDATIONS', 'SIUAPS_REGISTRATION', 'ENT_DASHBOARD'
   const [currentStep, setCurrentStep] = useState('LOGIN'); 
   const [selectedUrl, setSelectedUrl] = useState(null); // Toujours utile pour passer l'URL aux validations
+  const [mailData, setMailData] = useState({ unreadCount: 0, recentMails: [], loading: true });
 
   // 1. VÉRIFICATION AU LANCEMENT
   useEffect(() => {
@@ -45,7 +47,32 @@ const App = () => {
       };
       checkSession();
     }
+
+
+    const fetchMails = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/mails', {
+                    credentials: 'include' 
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    setMailData({
+                        unreadCount: data.unreadCount,
+                        recentMails: data.recentMails,
+                        loading: false
+                    });
+                } else {
+                    setMailData(prev => ({ ...prev, loading: false }));
+                }
+            } catch (err) {
+                setMailData(prev => ({ ...prev, loading: false }));
+            }
+        };
+        fetchMails();
+
   }, []);
+
 
   // 2. ACTIONS GLOBALES
   const handleLogout = async () => {
@@ -87,6 +114,10 @@ const App = () => {
               setSelectedUrl(url); 
               setCurrentStep('SIUAPS_VALIDATIONS'); 
           }}
+          mailData={mailData}
+          setActiveTabSiuaps={setActiveTabSiuaps}
+          activeTabSiuaps={activeTabSiuaps}
+
           setActiveTab={setActiveTab}
           activeTab={activeTab}
           onNavigateToRegistration={() => setCurrentStep('SIUAPS_REGISTRATION')}
@@ -96,7 +127,7 @@ const App = () => {
       {currentStep === 'SIUAPS_VALIDATIONS' && (
         <Validations 
           url={selectedUrl} 
-          onBack={() => {setCurrentStep('HUB'); setActiveTab('SPORT'); console.log(activeTab)}} 
+          onBack={() => {setCurrentStep('HUB');}} 
         />
       )}
 

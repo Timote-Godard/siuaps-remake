@@ -1,210 +1,845 @@
 [
   {
-    "name": "TP gr1 TIS ESIR1",
-    "id": "25193"
+    "id": "cupge1",
+    "name": "CUPGE 1",
+    "children": [
+      {
+        "id": "10455",
+        "name": "TD Groupe A",
+        "children": [
+          { "id": "10458", "name": "TP gr1 (TDA-TPG1)" },
+          { "id": "10463", "name": "TP gr2 (TDA-TPG2)" }
+        ]
+      },
+      {
+        "id": "10464",
+        "name": "TD Groupe B",
+        "children": [
+          { "id": "10469", "name": "TP gr3 (TDB-TPG3)" },
+          { "id": "10482", "name": "TP gr4 (TDB-TPG4)" }
+        ]
+      },
+      {
+        "id": "23321",
+        "name": "TES-S2",
+        "children": [
+          { "id": "23326", "name": "Groupe 1 TES" },
+          { "id": "23327", "name": "Groupe 2 TES" },
+          { "id": "23328", "name": "Groupe 3 TES" }
+        ]
+      },
+      {
+        "id": "10489",
+        "name": "Anglais (LV1)",
+        "children": [
+          { "id": "10498", "name": "G1 anglais" },
+          { "id": "10499", "name": "G2 anglais" },
+          { "id": "10501", "name": "G3 anglais" }
+        ]
+      },
+      {
+        "id": "10503",
+        "name": "LV2 (Facultatif)",
+        "children": [
+          { "id": "10523", "name": "Allemand" },
+          { "id": "10514", "name": "Espagnol" },
+          { "id": "10516", "name": "Japonais" }
+        ]
+      }
+    ]
   },
   {
-    "name": "TP gr1 TIS ESIR1",
-    "id": "8806"
+    "id": "cupge2",
+    "name": "CUPGE 2",
+    "children": [
+      {
+        "id": "9543",
+        "name": "TD Groupe A",
+        "children": [
+          {
+            "id": "9570",
+            "name": "TP gr1",
+            "children": [
+              { "id": "9621", "name": "TDA-TPgr1-TPSécu(a)-OUV MAT" },
+              { "id": "16119", "name": "TDA-TPgr1-TPSécu(b)-OUV MAT" }
+            ]
+          },
+          {
+            "id": "9644",
+            "name": "TP gr2",
+            "children": [
+              { "id": "16112", "name": "TDA-TPgr2-TPSécu(b)-OUV MAT" },
+              { "id": "24041", "name": "TDA-TPgr2-TPSécu(c)-OUV INF" },
+              { "id": "16115", "name": "TDA-TPgr2-TPSécu(c)-OUV MAT-OUV INF" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "9895",
+        "name": "TD Groupe B",
+        "children": [
+          {
+            "id": "9897",
+            "name": "TP gr3",
+            "children": [
+              { "id": "9926", "name": "TDB-TPgr3-TPSécu(d)-OUV SNR-OUV INF" },
+              { "id": "16117", "name": "TDB-TPgr3-TPSécu(e)-OUV SNR-OUV INF" }
+            ]
+          },
+          {
+            "id": "9931",
+            "name": "TP gr4",
+            "children": [
+              { "id": "9934", "name": "TDB-TPgr4-TPSécu(e)-OUV SNR-OUV INF" },
+              { "id": "16118", "name": "TDB-TPgr4-TPSécu(f)-OUV INF" },
+              { "id": "19304", "name": "TDB-TPgr4-TPSécu(f)-OUV SNR-OUV INF" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2561",
+        "name": "TP Sécurité ORGA-S3",
+        "children": [
+          { "id": "2613", "name": "TPS 1-2 ORGA-S3" },
+          { "id": "2626", "name": "TPS 3-4 ORGA-S3" },
+          { "id": "2640", "name": "TPS 5-6 ORGA-S3" }
+        ]
+      },
+      {
+        "id": "9937",
+        "name": "Anglais (LV1)",
+        "children": [
+          { "id": "9938", "name": "G1 anglais" },
+          { "id": "9939", "name": "G2 anglais" },
+          { "id": "9940", "name": "G3 anglais" }
+        ]
+      },
+      {
+        "id": "9947",
+        "name": "LV2 (Facultatif)",
+        "children": [
+          { "id": "10433", "name": "Allemand" },
+          { "id": "10429", "name": "Espagnol" },
+          { "id": "10432", "name": "Japonais" }
+        ]
+      },
+      {
+        "id": "10434",
+        "name": "Modules d'Ouverture",
+        "children": [
+          { "id": "15932", "name": "OUV Biomédical TPA" },
+          { "id": "15933", "name": "OUV Biomédical TPB" },
+          { "id": "10439", "name": "OUV INFO TPA" },
+          { "id": "10436", "name": "OUV INFO TPB" },
+          { "id": "15934", "name": "OUV MAT TP" },
+          { "id": "16759", "name": "OUV SNR TPA" },
+          { "id": "16760", "name": "OUV SNR TPB" }
+        ]
+      }
+    ]
   },
   {
-    "name": "TP gr2 TIS ESIR1",
-    "id": "3688"
+    "id": "esir1",
+    "name": "ESIR 1",
+    "children": [
+      {
+        "id": "esir1_info",
+        "name": "Informatique",
+        "children": [
+          {
+            "id": "24765",
+            "name": "TD GR A INFO",
+            "children": [
+              { "id": "8786", "name": "TD A - TP gr1 INFO" },
+              { "id": "8787", "name": "TD A - TP gr2 INFO" }
+            ]
+          },
+          {
+            "id": "24978",
+            "name": "TD GR B INFO",
+            "children": [
+              { "id": "8790", "name": "TD B - TP gr3 INFO" },
+              { "id": "13685", "name": "TD B - TP gr4 INFO" }
+            ]
+          },
+          {
+            "id": "3924",
+            "name": "Innovation",
+            "children": [
+              { "id": "9201", "name": "Entrepreneuriat" },
+              { "id": "3738", "name": "ID" },
+              { "id": "824", "name": "Recherche" },
+              { "id": "3797", "name": "Société" }
+            ]
+          },
+          {
+            "id": "4513",
+            "name": "Langues & Com",
+            "children": [
+              { "id": "4493", "name": "G1 INFO" },
+              { "id": "4505", "name": "G2 INFO" },
+              { "id": "4506", "name": "G3 INFO" },
+              { "id": "4510", "name": "G4 INFO" },
+              { "id": "4512", "name": "G5 INFO" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir1_mat",
+        "name": "Matériaux",
+        "children": [
+          {
+            "id": "25406",
+            "name": "TD / TP Matériaux",
+            "children": [
+              { "id": "8799", "name": "TP gr1 MAT" },
+              { "id": "8805", "name": "TP gr2 MAT" }
+            ]
+          },
+          {
+            "id": "4396",
+            "name": "Innovation",
+            "children": [
+              { "id": "3271", "name": "Entrepreneuriat" },
+              { "id": "9009", "name": "ID" },
+              { "id": "2538", "name": "Recherche" },
+              { "id": "9180", "name": "Société" }
+            ]
+          },
+          {
+            "id": "4514",
+            "name": "Langues & Com",
+            "children": [
+              { "id": "4494", "name": "G1 Matériaux" },
+              { "id": "4495", "name": "G2 Matériaux" },
+              { "id": "4508", "name": "G3 Matériaux" },
+              { "id": "4509", "name": "G4 Matériaux" },
+              { "id": "4511", "name": "G5 Matériaux" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir1_tis",
+        "name": "TIS",
+        "children": [
+          {
+            "id": "esir1_tis_fise",
+            "name": "TIS (FISE - Classique)",
+            "children": [
+              {
+                "id": "25192",
+                "name": "TD / TP TIS",
+                "children": [
+                  { "id": "8806", "name": "TP gr1 TIS" },
+                  { "id": "4049", "name": "TP gr2 TIS" }
+                ]
+              },
+              {
+                "id": "4490",
+                "name": "Innovation",
+                "children": [
+                  { "id": "3151", "name": "Entrepreneuriat" },
+                  { "id": "3301", "name": "ID" },
+                  { "id": "1202", "name": "Recherche" },
+                  { "id": "3903", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4515",
+                "name": "Langues & Com",
+                "children": [
+                  { "id": "8816", "name": "G1 TIS" },
+                  { "id": "8818", "name": "G2 TIS" },
+                  { "id": "8831", "name": "G3 TIS" },
+                  { "id": "8837", "name": "G4 TIS" },
+                  { "id": "8835", "name": "G5 TIS" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "esir1_tis_fisea",
+            "name": "TIS (FISEA - Apprentissage)",
+            "children": [
+              { "id": "18195", "name": "TD-TP FISEA TIS" },
+              {
+                "id": "18157",
+                "name": "Innovation",
+                "children": [
+                  { "id": "18161", "name": "Entrepreneuriat" },
+                  { "id": "18162", "name": "ID" },
+                  { "id": "18159", "name": "Recherche" },
+                  { "id": "18165", "name": "Société" }
+                ]
+              },
+              {
+                "id": "18170",
+                "name": "Langues",
+                "children": [
+                  { "id": "18171", "name": "G1 fisea TIS" },
+                  { "id": "18173", "name": "G2 fisea TIS" },
+                  { "id": "18175", "name": "G3 fisea TIS" },
+                  { "id": "18187", "name": "G4 fisea TIS" },
+                  { "id": "18183", "name": "G5 fisea TIS" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir1_snr",
+        "name": "SNR",
+        "children": [
+          { "id": "2525", "name": "Emploi du temps SNR (FISA)" }
+        ]
+      },
+      {
+        "id": "esir1_opt",
+        "name": "Options & Transverses",
+        "children": [
+          { "id": "9586", "name": "LV2 Espagnol" },
+          { "id": "9575", "name": "LV2 Allemand" },
+          { "id": "9590", "name": "LV2 Japonais" },
+          { "id": "9613", "name": "Engagement Étudiant" },
+          { "id": "172", "name": "Sport (SIUAPS)" }
+        ]
+      }
+    ]
   },
   {
-    "name": "TP gr2 TIS ESIR1",
-    "id": "4049"
+    "id": "esir2",
+    "name": "ESIR 2",
+    "children": [
+      {
+        "id": "esir2_info",
+        "name": "Informatique",
+        "children": [
+          {
+            "id": "11901",
+            "name": "Parcours IN (Informatique)",
+            "children": [
+              { "id": "10533", "name": "CM-TD-TP IN" },
+              {
+                "id": "4527",
+                "name": "Innovation IN",
+                "children": [
+                  { "id": "4534", "name": "Entrepreneuriat" },
+                  { "id": "4544", "name": "ID" },
+                  { "id": "4529", "name": "Recherche" },
+                  { "id": "4539", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4552",
+                "name": "Langues & Com IN",
+                "children": [
+                  { "id": "4558", "name": "G1 IN" },
+                  { "id": "4562", "name": "G2 IN" },
+                  { "id": "4567", "name": "G3 IN" },
+                  { "id": "4572", "name": "G4 IN" },
+                  { "id": "4580", "name": "G5 IN" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "12922",
+            "name": "Parcours IoT",
+            "children": [
+              { "id": "10560", "name": "CM-TD-TP IoT" },
+              {
+                "id": "4516",
+                "name": "Innovation IoT",
+                "children": [
+                  { "id": "4537", "name": "Entrepreneuriat" },
+                  { "id": "4547", "name": "ID" },
+                  { "id": "4532", "name": "Recherche" },
+                  { "id": "4543", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4553",
+                "name": "Langues & Com IoT",
+                "children": [
+                  { "id": "4559", "name": "G1 IoT" },
+                  { "id": "4563", "name": "G2 IoT" },
+                  { "id": "4569", "name": "G3 IoT" },
+                  { "id": "4575", "name": "G4 IoT" },
+                  { "id": "4578", "name": "G5 IoT" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "11975",
+            "name": "Parcours SI",
+            "children": [
+              {
+                "id": "15659",
+                "name": "CM-TD-TP SI",
+                "children": [
+                  { "id": "10562", "name": "TP gr1 SI" },
+                  { "id": "10564", "name": "TP gr2 SI" }
+                ]
+              },
+              {
+                "id": "4526",
+                "name": "Innovation SI",
+                "children": [
+                  { "id": "4533", "name": "Entrepreneuriat" },
+                  { "id": "4545", "name": "ID" },
+                  { "id": "4528", "name": "Recherche" },
+                  { "id": "4542", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4551",
+                "name": "Langues & Com SI",
+                "children": [
+                  { "id": "4556", "name": "G1 SI" },
+                  { "id": "4565", "name": "G2 SI" },
+                  { "id": "4566", "name": "G3 SI" },
+                  { "id": "4574", "name": "G4 SI" },
+                  { "id": "4579", "name": "G5 SI" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir2_mat",
+        "name": "Matériaux",
+        "children": [
+          {
+            "id": "15662",
+            "name": "CM-TD-TP Matériaux",
+            "children": [
+              { "id": "10547", "name": "TP gr1 MAT" },
+              { "id": "10570", "name": "TP gr2 MAT" }
+            ]
+          },
+          {
+            "id": "4523",
+            "name": "Innovation Matériaux",
+            "children": [
+              { "id": "4535", "name": "Entrepreneuriat" },
+              { "id": "4546", "name": "ID" },
+              { "id": "4531", "name": "Recherche" },
+              { "id": "4540", "name": "Société" }
+            ]
+          },
+          {
+            "id": "4555",
+            "name": "Langues & Com Matériaux",
+            "children": [
+              { "id": "4557", "name": "G1 Matériaux" },
+              { "id": "4564", "name": "G2 Matériaux" },
+              { "id": "4568", "name": "G3 Matériaux" },
+              { "id": "4573", "name": "G4 Matériaux" },
+              { "id": "4576", "name": "G5 Matériaux" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir2_tis",
+        "name": "TIS",
+        "children": [
+          {
+            "id": "esir2_tis_fise",
+            "name": "TIS (FISE - Classique)",
+            "children": [
+              {
+                "id": "20216",
+                "name": "TD / TP TIS",
+                "children": [
+                  { "id": "10534", "name": "TP gr1 TIS" },
+                  { "id": "10554", "name": "TP gr2 TIS" }
+                ]
+              },
+              {
+                "id": "4522",
+                "name": "Innovation TIS",
+                "children": [
+                  { "id": "4536", "name": "Entrepreneuriat" },
+                  { "id": "4548", "name": "ID" },
+                  { "id": "4530", "name": "Recherche" },
+                  { "id": "4541", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4554",
+                "name": "Langues & Com TIS",
+                "children": [
+                  { "id": "4560", "name": "G1 TIS" },
+                  { "id": "4561", "name": "G2 TIS" },
+                  { "id": "4570", "name": "G3 TIS" },
+                  { "id": "4571", "name": "G4 TIS" },
+                  { "id": "4577", "name": "G5 TIS" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "esir2_tis_fisea",
+            "name": "TIS (FISEA - Apprentissage)",
+            "children": [
+              { "id": "13299", "name": "TD-TP FISEA TIS" },
+              {
+                "id": "1241",
+                "name": "Innovation FISEA",
+                "children": [
+                  { "id": "1592", "name": "Entrepreneuriat" },
+                  { "id": "4116", "name": "ID" },
+                  { "id": "1565", "name": "Recherche" },
+                  { "id": "4185", "name": "Société" }
+                ]
+              },
+              {
+                "id": "4708",
+                "name": "Langues FISEA",
+                "children": [
+                  { "id": "9798", "name": "G1 fisea" },
+                  { "id": "11265", "name": "G2 fisea" },
+                  { "id": "12190", "name": "G3 fisea" },
+                  { "id": "12595", "name": "G4 fisea" },
+                  { "id": "12198", "name": "G5 fisea" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir2_snr",
+        "name": "SNR",
+        "children": [
+          {
+            "id": "10224",
+            "name": "Parcours S8 (FISA)",
+            "children": [
+              { "id": "10231", "name": "Parcours SNSF" },
+              { "id": "10260", "name": "Parcours VS" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir2_opt",
+        "name": "Options & Transverses",
+        "children": [
+          { "id": "9633", "name": "LV2 Espagnol" },
+          { "id": "9622", "name": "LV2 Allemand" },
+          { "id": "9636", "name": "LV2 Japonais" },
+          { "id": "9648", "name": "Engagement Étudiant" },
+          { "id": "9638", "name": "Sport (SIUAPS)" }
+        ]
+      }
+    ]
   },
   {
-    "name": "innovation ESIR1 TIS",
-    "id": "4490"
+    "id": "esir3",
+    "name": "ESIR 3",
+    "children": [
+      {
+        "id": "esir3_info",
+        "name": "Informatique",
+        "children": [
+          {
+            "id": "20282",
+            "name": "Parcours IN (Informatique)",
+            "children": [
+              {
+                "id": "24656",
+                "name": "CM-TD-TP IN",
+                "children": [
+                  { "id": "10270", "name": "TD-TP IN contrat pro" },
+                  { "id": "10305", "name": "TD-TP IN projet indus" },
+                  {
+                    "id": "4586",
+                    "name": "Anglais IN",
+                    "children": [
+                      { "id": "4590", "name": "G1 IN" },
+                      { "id": "4595", "name": "G2 IN" },
+                      { "id": "4604", "name": "G3 IN" },
+                      { "id": "4615", "name": "G4 IN" }
+                    ]
+                  },
+                  {
+                    "id": "22013",
+                    "name": "CCO IN",
+                    "children": [
+                      { "id": "22029", "name": "G1 CCO IN" },
+                      { "id": "22015", "name": "G2 CCO IN" },
+                      { "id": "22016", "name": "G3 CCO IN" },
+                      { "id": "22022", "name": "G4 CCO IN" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "24228",
+            "name": "Parcours IoT",
+            "children": [
+              {
+                "id": "24229",
+                "name": "CM-TD-TP IoT",
+                "children": [
+                  {
+                    "id": "24230",
+                    "name": "TP gr1 IoT",
+                    "children": [
+                      { "id": "10315", "name": "TP gr1 contrat pro" },
+                      { "id": "10328", "name": "TP gr1 projet indus" }
+                    ]
+                  },
+                  {
+                    "id": "24336",
+                    "name": "TP gr2 IoT",
+                    "children": [
+                      { "id": "10332", "name": "TP gr2 contrat pro" },
+                      { "id": "10340", "name": "TP gr2 projet indus" }
+                    ]
+                  },
+                  {
+                    "id": "4585",
+                    "name": "Anglais IoT",
+                    "children": [
+                      { "id": "4593", "name": "G1 IoT" },
+                      { "id": "4596", "name": "G2 IoT" },
+                      { "id": "4603", "name": "G3 IoT" },
+                      { "id": "4605", "name": "G4 IoT" }
+                    ]
+                  },
+                  {
+                    "id": "22040",
+                    "name": "CCO IoT",
+                    "children": [
+                      { "id": "22066", "name": "G1 CCO IoT" },
+                      { "id": "22041", "name": "G2 CCO IoT" },
+                      { "id": "22042", "name": "G3 CCO IoT" },
+                      { "id": "22046", "name": "G4 CCO IoT" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "24442",
+            "name": "Parcours SI",
+            "children": [
+              {
+                "id": "24443",
+                "name": "CM-TD-TP SI",
+                "children": [
+                  {
+                    "id": "24550",
+                    "name": "TP gr1 SI",
+                    "children": [
+                      { "id": "10345", "name": "TP gr1 contrat pro" },
+                      { "id": "10346", "name": "TP gr1 projet indus" }
+                    ]
+                  },
+                  {
+                    "id": "24444",
+                    "name": "TP gr2 SI",
+                    "children": [
+                      { "id": "10348", "name": "TP gr2 contrat pro" },
+                      { "id": "10350", "name": "TP gr2 projet indus" }
+                    ]
+                  },
+                  {
+                    "id": "4584",
+                    "name": "Anglais SI",
+                    "children": [
+                      { "id": "4594", "name": "G1 SI" },
+                      { "id": "4599", "name": "G2 SI" },
+                      { "id": "4601", "name": "G3 SI" },
+                      { "id": "4634", "name": "G4 SI" }
+                    ]
+                  },
+                  {
+                    "id": "22072",
+                    "name": "CCO SI",
+                    "children": [
+                      { "id": "22089", "name": "G1 CCO SI" },
+                      { "id": "22073", "name": "G2 CCO SI" },
+                      { "id": "22077", "name": "G3 CCO SI" },
+                      { "id": "22081", "name": "G4 CCO SI" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir3_mat",
+        "name": "Matériaux",
+        "children": [
+          {
+            "id": "22652",
+            "name": "Matériaux (FISE - Classique)",
+            "children": [
+              {
+                "id": "22653",
+                "name": "TP gr1 MAT",
+                "children": [
+                  { "id": "10357", "name": "TP gr1 contrat pro" },
+                  { "id": "10359", "name": "TP gr1 projet indus" }
+                ]
+              },
+              {
+                "id": "23733",
+                "name": "TP gr2 MAT",
+                "children": [
+                  { "id": "10363", "name": "TP gr2 contrat pro" },
+                  { "id": "10364", "name": "TP gr2 projet indus" }
+                ]
+              },
+              {
+                "id": "4589",
+                "name": "Anglais MAT",
+                "children": [
+                  { "id": "4591", "name": "G1 MAT" },
+                  { "id": "4598", "name": "G2 MAT" },
+                  { "id": "4600", "name": "G3 MAT" },
+                  { "id": "4607", "name": "G4 MAT" }
+                ]
+              },
+              {
+                "id": "22197",
+                "name": "CCO MAT",
+                "children": [
+                  { "id": "22217", "name": "G1 CCO MAT" },
+                  { "id": "22200", "name": "G2 CCO MAT" },
+                  { "id": "22202", "name": "G3 CCO MAT" },
+                  { "id": "22203", "name": "G4 CCO MAT" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "10218",
+            "name": "Matériaux (FISA - Alternance)",
+            "children": [
+              { "id": "899", "name": "ADE FISA MAT" },
+              { "id": "17176", "name": "FISA Groupe 1" },
+              { "id": "17189", "name": "FISA Groupe 2" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir3_tis",
+        "name": "TIS",
+        "children": [
+          {
+            "id": "24009",
+            "name": "CM-TD-TP TIS",
+            "children": [
+              {
+                "id": "9996",
+                "name": "Voie 1: Dispositifs médicaux",
+                "children": [
+                  { "id": "10009", "name": "TP gr1 contrat pro" },
+                  { "id": "10011", "name": "TP gr1 projet indus" }
+                ]
+              },
+              {
+                "id": "9997",
+                "name": "Voie 2: Systèmes interconnectés",
+                "children": [
+                  { "id": "10377", "name": "TP gr2 contrat pro" },
+                  { "id": "10395", "name": "TP gr2 projet indus" }
+                ]
+              },
+              {
+                "id": "4587",
+                "name": "Anglais TIS",
+                "children": [
+                  { "id": "4592", "name": "G1 TIS" },
+                  { "id": "4597", "name": "G2 TIS" },
+                  { "id": "4602", "name": "G3 TIS" },
+                  { "id": "4606", "name": "G4 TIS" }
+                ]
+              },
+              {
+                "id": "22098",
+                "name": "CCO TIS",
+                "children": [
+                  { "id": "22168", "name": "G1 CCO TIS" },
+                  { "id": "22100", "name": "G2 CCO TIS" },
+                  { "id": "22105", "name": "G3 CCO TIS" },
+                  { "id": "22108", "name": "G4 CCO TIS" }
+                ]
+              }
+            ]
+          },
+          { "id": "22012", "name": "Parcours SIVOS" }
+        ]
+      },
+      {
+        "id": "esir3_snr",
+        "name": "SNR",
+        "children": [
+          {
+            "id": "10262",
+            "name": "Parcours S9 (FISA)",
+            "children": [
+              { "id": "10247", "name": "Parcours SNSF" },
+              { "id": "10234", "name": "Parcours VS" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "esir3_opt",
+        "name": "Options & Transverses",
+        "children": [
+          {
+            "id": "9562",
+            "name": "Options Expression / Sport",
+            "children": [
+              { "id": "9661", "name": "LV2 Espagnol" },
+              { "id": "9658", "name": "LV2 Allemand" },
+              { "id": "9662", "name": "LV2 Japonais" },
+              { "id": "9682", "name": "Engagement Étudiant" },
+              { "id": "9668", "name": "Sport (SIUAPS)" }
+            ]
+          },
+          {
+            "id": "9446",
+            "name": "Parcours Contrat Pro",
+            "children": [
+              { "id": "9477", "name": "Cours Contrat pro" },
+              { "id": "2177", "name": "Soutenance" }
+            ]
+          },
+          { "id": "9471", "name": "Parcours Projet Industriel" },
+          { "id": "3177", "name": "Semaine Entrepreneuriat" }
+        ]
+      }
+    ]
   },
   {
-    "name": "Inent esir1 TIS",
-    "id": "3151"
-  },
-  {
-    "name": "Inid esir1 TIS",
-    "id": "3301"
-  },
-  {
-    "name": "Inrech esir1 TIS",
-    "id": "1202"
-  },
-  {
-    "name": "Insoc esir1 TIS",
-    "id": "3903"
-  },
-  {
-    "name": "langues - communication ESIR 1 TIS",
-    "id": "4515"
-  },
-  {
-    "name": "G1 ESIR1 TIS",
-    "id": "8816"
-  },
-  {
-    "name": "G2 ESIR1 TIS",
-    "id": "8818"
-  },
-  {
-    "name": "G3 ESIR1 TIS",
-    "id": "8831"
-  },
-  {
-    "name": "G4 ESIR1 TIS",
-    "id": "8837"
-  },
-  {
-    "name": "G5 ESIR1 TIS",
-    "id": "8835"
-  },
-  {
-    "name": "fise Matériaux 1",
-    "id": "25405"
-  },
-  {
-    "name": "CM TD TP Matériaux ESIR1",
-    "id": "25406"
-  },
-  {
-    "name": "TP gr1 MAT ESIR1",
-    "id": "25407"
-  },
-  {
-    "name": "TP gr1 MAT ESIR1",
-    "id": "8799"
-  },
-  {
-    "name": "TP gr2 MAT ESIR1",
-    "id": "25513"
-  },
-  {
-    "name": "TP gr2 MAT ESIR1",
-    "id": "8805"
-  },
-  {
-    "name": "innovation ESIR1 Matériaux",
-    "id": "4396"
-  },
-  {
-    "name": "Inent esir1 MATERIAUX",
-    "id": "3271"
-  },
-  {
-    "name": "Inid esir1 MATERIAUX",
-    "id": "9009"
-  },
-  {
-    "name": "Inrech esir1 MATERIAUX",
-    "id": "2538"
-  },
-  {
-    "name": "Insoc esir1 MATERIAUX",
-    "id": "9180"
-  },
-  {
-    "name": "langues - communication ESIR 1 Matériaux",
-    "id": "4514"
-  },
-  {
-    "name": "G1 ESIR1 Matériaux",
-    "id": "4494"
-  },
-  {
-    "name": "G2 ESIR1 Matériaux",
-    "id": "4495"
-  },
-  {
-    "name": "G3 ESIR1 Matériaux",
-    "id": "4508"
-  },
-  {
-    "name": "G4 ESIR1 Matériaux",
-    "id": "4509"
-  },
-  {
-    "name": "G5 ESIR1 Matériaux",
-    "id": "4511"
-  },
-  {
-    "name": "option expression ESIR1",
-    "id": "9568"
-  },
-  {
-    "name": "LV2 espagnol",
-    "id": "9586"
-  },
-  {
-    "name": "LV2: allemand",
-    "id": "9575"
-  },
-  {
-    "name": "LV2: japonais",
-    "id": "9590"
-  },
-  {
-    "name": "engagement étudiant",
-    "id": "9613"
-  },
-  {
-    "name": "sport",
-    "id": "172"
-  },
-  {
-    "name": "03 ESIR 2 FISE",
-    "id": "11158"
-  },
-  {
-    "name": "04 ESIR 3 FISE",
-    "id": "23814"
-  },
-  {
-    "name": "05 esir3 fisa matériaux",
-    "id": "10218"
-  },
-  {
-    "name": "08 esir1 fisa snr",
-    "id": "10221"
-  },
-  {
-    "name": "08 esir2 fisa snr",
-    "id": "10222"
-  },
-  {
-    "name": "08 esir3 fisa snr",
-    "id": "10223"
-  },
-  {
-    "name": "09 ESIR 1 fisea TIS",
-    "id": "13830"
-  },
-  {
-    "name": "09 ESIR 2 fisea TIS",
-    "id": "736"
-  },
-  {
-    "name": "planète ESIR",
-    "id": "4775"
-  },
-  {
-    "name": "Faculté des Sciences",
-    "id": "11140"
-  },
-  {
-    "name": "IGR",
-    "id": "2003"
-  },
-  {
-    "name": "IPAG",
-    "id": "19589"
-  },
-  {
-    "name": "ISTIC",
-    "id": "11206"
-  },
-  {
-    "name": "IUT Lannion",
-    "id": "3414"
+    "id": "4775",
+    "name": "Planète ESIR (Événements)",
+    "children": [
+      { "id": "4779", "name": "AG, conférences et événements" },
+      { "id": "235", "name": "Soutenances contrat pro" },
+      { "id": "2530", "name": "Soutenances stage voie normale" },
+      { "id": "4781", "name": "Vie associative (tutorat, clubs)" }
+    ]
   }
 ]

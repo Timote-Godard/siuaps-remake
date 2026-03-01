@@ -1,0 +1,17 @@
+name: Deploy to Home Server
+
+on:
+  push:
+    branches: [ main ] # Se déclenche quand tu push sur la branche main
+
+jobs:
+  deploy:
+    runs-on: self-hosted # <--- C'est ici que tu appelles ton vieux PC
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Lancement de l'application
+        run: |
+          docker compose up -d --build
+          docker image prune -f # Supprime les vieilles versions pour ne pas saturer le disque

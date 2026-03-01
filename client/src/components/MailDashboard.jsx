@@ -51,7 +51,7 @@ const MailDashboard = ({ mailData }) => {
                 href={url} 
                 target="_blank" 
                 rel="noreferrer"
-                className="inline-block bg-yellow-300 border-2 border-black px-1 font-bold mx-1 hover:bg-cyan-300 hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform"
+                className="inline-block bg-blue-300 border-2 border-black px-1 font-bold mx-1 hover:bg-cyan-300 hover:-translate-y-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform"
             >
                 {linkText}
             </a>
@@ -68,7 +68,7 @@ const MailDashboard = ({ mailData }) => {
     if (loading) return <div className="p-10 font-black uppercase animate-pulse">Relève...</div>;
 
     return (
-        <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+        <div className="p-4 sm:p-8 max-w-4xl mx-auto bg-blue-200 h-full">
             {/* VUE LISTE */}
             {!selectedMail ? (
                 <>
@@ -101,7 +101,7 @@ const MailDashboard = ({ mailData }) => {
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                     <button 
                         onClick={() => setSelectedMail(null)}
-                        className="mb-6 flex items-center gap-2 bg-black text-white px-4 py-2 font-black uppercase hover:bg-yellow-300 hover:text-black border-4 border-black transition-colors"
+                        className="mb-6 flex items-center gap-2 bg-black text-white px-4 py-2 font-black uppercase hover:bg-blue-300 hover:text-black border-4 border-black transition-colors"
                     >
                         <ArrowLeft size={20} strokeWidth={3} /> Retour
                     </button>

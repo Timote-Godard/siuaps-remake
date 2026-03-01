@@ -1,36 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Dumbbell, Mail, BookOpen } from 'lucide-react';
+import { CalendarDays, Dumbbell, Mail, BookOpen, LogOut } from 'lucide-react';
 import EntDashboard from './EntDashboard';
 import SiuapsDashboard from './SiuapsDashboard';
 import MailDashboard from './MailDashboard'; // 👈 On importe le nouveau dashboard
 
-const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }) => {
-    const [activeTab, setActiveTab] = useState('AGENDA');
-    const [mailData, setMailData] = useState({ unreadCount: 0, recentMails: [], loading: true });
+const Hub = ({ userData, mailData, onLogout, activeTab, setActiveTab, onNavigateToSlots, onNavigateToRegistration, activeTabSiuaps, setActiveTabSiuaps }) => {
+    
 
-    useEffect(() => {
-        const fetchMails = async () => {
-            try {
-                const res = await fetch('http://localhost:5000/api/mails', {
-                    credentials: 'include' 
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    setMailData({
-                        unreadCount: data.unreadCount,
-                        recentMails: data.recentMails,
-                        loading: false
-                    });
-                } else {
-                    setMailData(prev => ({ ...prev, loading: false }));
-                }
-            } catch (err) {
-                setMailData(prev => ({ ...prev, loading: false }));
-            }
-        };
-        fetchMails();
-    }, []);
+    
 
     return (
         <div className="h-screen w-screen flex flex-col bg-[#F0F0F0] overflow-hidden selection:bg-yellow-300">
@@ -43,10 +20,11 @@ const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }
 
                 {activeTab === 'SPORT' && (
                     <SiuapsDashboard 
-                        userData={userData} 
-                        onBack={() => setActiveTab('AGENDA')}
+                        userData={userData}
                         onNavigateToSlots={onNavigateToSlots}
                         onNavigateToRegistration={onNavigateToRegistration}
+                        activeTab={activeTabSiuaps}
+                        setActiveTab={setActiveTabSiuaps}
                     /> 
                 )}
 
@@ -57,6 +35,9 @@ const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }
 
                 {activeTab === 'MOODLE' && (
                     <div className="h-full flex items-center justify-center border-4 border-black m-4 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                        <button onClick={onLogout} className="cursor-pointer absolute hover:translate-y-[-2px]  hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] top-15 right-15 border-2 border-black p-2 font-black bg-red-100 uppercase hover:bg-red-600 hover:text-white flex items-center gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <LogOut size={18} /> Déconnexion
+                        </button>
                         <a href="https://moodle.univ-rennes1.fr" target="_blank" rel="noreferrer" className="text-4xl font-black uppercase underline hover:text-green-600">
                             Ouvrir Moodle
                         </a>
@@ -72,7 +53,7 @@ const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }
                 />
                 <NavButton 
                     id="SPORT" current={activeTab} setTab={setActiveTab} 
-                    icon={<Dumbbell size={24} strokeWidth={3} />} label="Sport" bg="bg-pink-300"
+                    icon={<Dumbbell size={24} strokeWidth={3} />} label="Sport" bg="bg-green-400"
                 />
                 
                 {/* BOUTON NAV MAILS AVEC INDICATEUR */}
@@ -91,8 +72,10 @@ const Hub = ({ userData, onLogout, onNavigateToSlots, onNavigateToRegistration }
 
                 <NavButton 
                     id="MOODLE" current={activeTab} setTab={setActiveTab} 
-                    icon={<BookOpen size={24} strokeWidth={3} />} label="Moodle" bg="bg-green-400"
+                    icon={<BookOpen size={24} strokeWidth={3} />} label="Moodle" bg="bg-pink-300"
                 />
+
+                
                 
             </nav>
         </div>

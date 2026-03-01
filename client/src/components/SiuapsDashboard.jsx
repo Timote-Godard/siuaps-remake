@@ -1,9 +1,8 @@
     import React, { useState } from 'react';
 import { ClipboardClock, Dumbbell, BookOpen, UserRound, ArrowLeft } from 'lucide-react';
 
-const SiuapsDashboard = ({ userData, onNavigateToSlots, onNavigateToRegistration }) => {
+const SiuapsDashboard = ({ userData, activeTab, setActiveTab, onNavigateToSlots, onNavigateToRegistration }) => {
 
-    const [activeTab, setActiveTab] = useState("rdv");
     // Variables de style pour simplifier le JSX
     const bgButtonActif = "bg-green-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]";
     const textButtonActif = "text-white md:translate-y-[4px] md:translate-x-[4px] md:shadow-none"; 
@@ -17,24 +16,40 @@ const SiuapsDashboard = ({ userData, onNavigateToSlots, onNavigateToRegistration
 
     return (
         // min-h-screen + flex + justify-center pour le centrage absolu
-        <div className='relative min-w-screen min-h-screen md:pb-24 md:pb-0 bg-[url("src/assets/bgImage.jpg")] bg-cover bg-center bg-fixed flex flex-col items-center'>
+        <div className='relative min-w-screen min-h-screen md:pb-24 md:pb-0 bg-green-200 flex flex-col items-center'>
             
             {/* Overlay léger pour la lisibilité si l'image est trop claire/sombre */}
-            <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+            <div className="absolute pointer-events-none"></div>
 
             <div className="relative z-10 w-full max-w-3xl p-4 font-sans animate-in fade-in duration-100">
                 
                 {/* EN-TÊTE */}
-                <header className="m    b-6 flex flex-col gap-4">
+                <header className="mb-6 flex flex-col gap-4">
                     {/* Infos profil */}
-                    <div className="flex items-center w-full gap-4 bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <h1 className="text-2xl sm:text-3xl font-bold italic tracking-tight">
-                            Bonjour {userData?.name?.split(' ')[0] || "Étudiant"} !
-                        </h1>
-                    </div>
 
                     {/* Action principale */}
-                    <div className='bg-white p-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'>
+                    <div className='flex flex-col bg-white p-4 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] gap-2 '>
+                        <nav className="bottom-0 left-0 w-full flex justify-center z-50 border-3 border-black">
+                            <div className="w-full max-w-3xl flex h-20 md:h-16 ">
+                                {[
+                                    { id: 'rdv', label: 'Agenda', icon: <ClipboardClock size={20} /> },
+                                    { id: 'activites', label: 'Sports', icon: <Dumbbell size={20} /> },
+                                    { id: 'enseignements', label: 'Cours', icon: <BookOpen size={20} /> },
+                                    { id: 'profil', label: 'Profil', icon: <UserRound size={20} /> }
+                                ].map((tab) => (
+                                    <button 
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-1 flex flex-col justify-center items-center transition-all duration-100 
+                                            ${activeTab === tab.id ? bgButtonActif + " " + textButtonActif : bgButtonClickable + " " + ""}`}
+                                    >
+                                        {tab.icon}
+                                        <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
+                        
                         <button 
                             onClick={onNavigateToRegistration}
                             className={`cursor-pointer bg-green-200 border-3 border-black px-4 py-3 font-bold w-full ${bgButtonClickable} transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
@@ -50,26 +65,7 @@ const SiuapsDashboard = ({ userData, onNavigateToSlots, onNavigateToRegistration
                 {/* CONTENU PRINCIPAL */}
                 <main className='bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:min-h-[700px] min-h-[400px]'>
 
-                    <nav className="hidden md:block fixed bottom-0 left-0 w-full flex justify-center z-50 md:relative md:bottom-auto md:left-auto md:mb-6 md:z-10">
-                    <div className="w-full max-w-3xl flex h-20 md:h-16 gap-3">
-                        {[
-                            { id: 'rdv', label: 'Agenda', icon: <ClipboardClock size={20} /> },
-                            { id: 'activites', label: 'Sports', icon: <Dumbbell size={20} /> },
-                            { id: 'enseignements', label: 'Cours', icon: <BookOpen size={20} /> },
-                            { id: 'profil', label: 'Profil', icon: <UserRound size={20} /> }
-                        ].map((tab) => (
-                            <button 
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 flex flex-col justify-center items-center transition-all duration-100 border-2 border-black md:border-2 
-                                    ${activeTab === tab.id ? bgButtonActif + " " + textButtonActif : bgButtonClickable + " " + textButtonInActif}`}
-                            >
-                                {tab.icon}
-                                <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </nav>
+                    
                     
                     {/* SECTION : Rendez-vous */}
                     {activeTab === 'rdv' && (
@@ -171,28 +167,6 @@ const SiuapsDashboard = ({ userData, onNavigateToSlots, onNavigateToRegistration
                     )}
                 </main>
             </div>
-
-            {/* NAVIGATION FIXE AVEC SHADOW TOP */}
-            <nav className="fixed bottom-[85px] left-1/2 -translate-x-1/2 w-[90%] sm:w-[400px] z-40">
-                <div className="w-full max-w-3xl gap-4 flex h-20">
-                    {[
-                        { id: 'rdv', label: 'Agenda', icon: <ClipboardClock size={20} /> },
-                        { id: 'activites', label: 'Sports', icon: <Dumbbell size={20} /> },
-                        { id: 'enseignements', label: 'Cours', icon: <BookOpen size={20} /> },
-                        { id: 'profil', label: 'Profil', icon: <UserRound size={20} /> }
-                    ].map((tab) => (
-                        <button 
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex flex-col justify-center items-center gap-1 transition-all duration-100 border-r border-black last:border-r-0
-                                ${activeTab === tab.id ? bgButtonActif + " " + textButtonActif : bgButtonHover + " " + textButtonInActif}`}
-                        >
-                            {tab.icon}
-                            <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </nav>
         </div>
     );
 };
