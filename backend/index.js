@@ -12,7 +12,10 @@ const app = express();
 // ========================================================
 // 1. LE CORS EN TOUT PREMIER (Le videur de la boîte de nuit)
 // ========================================================
-app.use(cors()); // Autorise TOUT le monde
+app.use(cors({
+  origin: true,
+  credentials: true
+})); // Autorise TOUT le monde
 
 // ========================================================
 // 2. LA SESSION (Le gestionnaire de mémoire)
