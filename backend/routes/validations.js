@@ -4,11 +4,66 @@ import { client } from '../client.js';
 
 const router = express.Router();
 
+// 🌟 1. AJOUT DES HEADERS MANQUANTS
+const ROBOT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
+};
+
+// ⏱️ DICTIONNAIRE DE SUIVI DES VALIDATIONS (Stocké en RAM)
+const userValidationTimers = new Map(); 
+
+// 🚀 FONCTION DU TRAVAILLEUR DE L'OMBRE
+const planifierValidationSiuaps = (userId, locationId, studentName) => {
+    const NOW = Date.now();
+    const DELAI_30_MIN = 30 * 60 * 1000; 
+    
+    // On utilise le NOM pour lier ses 2 créneaux, même s'il a 2 ID différents
+    const timerKey = studentName || userId; 
+
+    let tempsExecution = NOW;
+
+    // S'il est DÉJÀ dans la file d'attente, on décale son exécution de 30 min !
+    if (userValidationTimers.has(timerKey)) {
+        const derniereValidation = userValidationTimers.get(timerKey);
+        if (NOW - derniereValidation < DELAI_30_MIN) {
+            tempsExecution = derniereValidation + DELAI_30_MIN;
+        }
+    }
+
+    userValidationTimers.set(timerKey, tempsExecution);
+    const delaiAvantExecution = Math.max(0, tempsExecution - NOW);
+
+    console.log(`🕒 ${studentName || userId} sera validé sur le SIUAPS dans ${Math.round(delaiAvantExecution / 60000)} minutes.`);
+
+    setTimeout(async () => {
+        try {
+            console.log(`🚀 [SIUAPS] Exécution de la validation silencieuse pour ${studentName || userId}...`);
+            const urlValidation = `https://mon-espace.siuaps.univ-rennes.fr/local/apsolu_presence/index.php?tab=presence&courseid=250&userid=${userId}&locationid=${locationId}`;
+            
+            const response = await client.get(urlValidation, { headers: ROBOT_HEADERS });
+            const $ = cheerio.load(response.data);
+            
+            if ($('.alert-success').length > 0) {
+                console.log(`✅ [SUCCÈS] Étudiant ${studentName || userId} validé à la location ${locationId} !`);
+            } else {
+                console.log(`❌ [ÉCHEC] Étudiant ${studentName || userId} : le message de succès est introuvable.`);
+            }
+        } catch (error) {
+            console.error(`🔥 [ERREUR SIUAPS] Validation de ${studentName || userId} échouée :`, error.message);
+        }
+    }, delaiAvantExecution);
+};
+
+// ... (GARDE TA ROUTE 1 '/validations' INTACTE ICI) ...
+
 // --------------------------------------------------------
 // ROUTE 1 : RÉCUPÉRATION DES CRÉNEAUX ET ÉTUDIANTS (FENÊTRE GLISSANTE)
 // --------------------------------------------------------
 router.post('/validations', async (req, res) => {
-    const { url, archive } = req.body;
+    // 🌟 1. On récupère le nouveau paramètre "searchMissing"
+    const { url, archive, searchMissing } = req.body;
 
     if (!url) return res.status(400).json({ success: false, message: "URL manquante" });
 
@@ -16,7 +71,7 @@ router.post('/validations', async (req, res) => {
 
     try {
         let allCreneaux = [];
-        let currentDate = ""; 
+        let currentDate = "";
 
       
         // 1. On charge la page demandée (ex: Page 2)
@@ -133,7 +188,7 @@ router.post('/validations', async (req, res) => {
                 const studentsDeCeCreneau = [];
                 
                 $row.find('.otherstudent').each((i, htmlEtudiant) => {
-                    const $el = $page(htmlEtudiant); // Et plus d'erreur ici non plus !
+                    const $el = $page(htmlEtudiant); 
                     const appointmentId = $el.find('input.studentselect').val();
                     const isAlreadyChecked = $el.find('input.studentselect').is(':checked');
 
@@ -142,9 +197,32 @@ router.post('/validations', async (req, res) => {
                     const fullName = img.attr('alt') || initials.attr('title') || initials.attr('aria-label') || $el.find('a').last().text().trim();
                     const imageUrl = img.attr('src') || null;
 
+                    // =========================================================
+                    // 🕵️ NOUVEAU : EXTRACTION DE L'ID STATIQUE (POUR LE SIUAPS)
+                    // =========================================================
+                    let staticId = null;
+                    
+                    // 1. La méthode parfaite : chercher dans le lien du profil
+                    const profileLink = $el.find('a').attr('href');
+                    if (profileLink) {
+                        const idMatch = profileLink.match(/id=(\d+)/);
+                        if (idMatch) staticId = idMatch[1]; // Ex: 12345
+                    }
+
+                    // 2. Le Plan B (Ton idée) : chercher dans l'image
+                    if (!staticId && imageUrl) {
+                        // pluginfile.php/107721/... (107721 est l'ID de contexte utilisateur)
+                        const contextMatch = imageUrl.match(/pluginfile\.php\/(\d+)\//);
+                        const revMatch = imageUrl.match(/rev=(\d+)/);
+
+                        if (contextMatch) staticId = contextMatch[1];
+                        else if (revMatch && revMatch[1] !== "0") staticId = revMatch[1];
+                    }
+
                     if (fullName && appointmentId) {
                         studentsDeCeCreneau.push({
                             id: appointmentId,
+                            staticId: staticId, // 🌟 ON SAUVEGARDE L'ID FIXE ICI !
                             name: fullName,
                             avatar: imageUrl,
                             initials: initials.text().trim() || null,
@@ -204,8 +282,48 @@ router.post('/validations', async (req, res) => {
                 .sort((a, b) => parseMoodleDate(b.date) - parseMoodleDate(a.date)); // 🔼 Tri : Plus récent en haut
         }
 
-        // 3. Suppression des éventuels doublons (si Moodle répète une ligne en fin de page)
-        const uniqueSlots = Array.from(new Map(allCreneaux.map(s => [s.id, s])).values());
+        if (archive) {
+            const moisFr = {
+                "janvier": 0, "février": 1, "mars": 2, "avril": 3, "mai": 4, "juin": 5,
+                "juillet": 6, "août": 7, "septembre": 8, "octobre": 9, "novembre": 10, "décembre": 11
+            };
+
+            const parseMoodleDate = (dateStr) => {
+                const parts = dateStr.toLowerCase().split(' ');
+                return new Date(parts[3], moisFr[parts[2]], parts[1]).getTime();
+            };
+
+            const aujourdhui = new Date().setHours(23, 59, 59, 999); 
+
+            allCreneaux = allCreneaux
+                .filter(slot => parseMoodleDate(slot.date) <= aujourdhui) 
+                .sort((a, b) => parseMoodleDate(b.date) - parseMoodleDate(a.date)); 
+        }
+
+        // 3. Suppression des éventuels doublons
+        let uniqueSlots = Array.from(new Map(allCreneaux.map(s => [s.id, s])).values());
+
+        // ==========================================================
+        // 🎯 4. LE RADAR À OUBLIS (Nouveau !)
+        // ==========================================================
+        if (searchMissing && searchMissing.trim() !== "") {
+            const searchLower = searchMissing.toLowerCase().trim();
+            
+            uniqueSlots = uniqueSlots.filter(slot => {
+                // On vérifie si l'étudiant est dans ce créneau ET qu'il n'est PAS coché
+                const isMissingHere = slot.students.some(s => 
+                    s.name.toLowerCase().includes(searchLower) && !s.isChecked
+                );
+                return isMissingHere;
+            }).map(slot => ({
+                ...slot,
+                // Pour que l'interface soit propre, on cache les autres étudiants du créneau 
+                // et on ne garde que la personne qu'on recherche
+                students: slot.students.filter(s => 
+                    s.name.toLowerCase().includes(searchLower) && !s.isChecked
+                )
+            }));
+        }
 
         return res.json({ success: true, slots: uniqueSlots });
 
@@ -218,7 +336,8 @@ router.post('/validations', async (req, res) => {
 // ROUTE 2 : SAUVEGARDE INVISIBLE (CLIC PAR CLIC)
 // --------------------------------------------------------
 router.post('/save-attendance', async (req, res) => {
-    const { actionUrl, presentIds } = req.body;
+    // 🌟 On extrait bien la CIBLE (targetStudentId)
+    const { actionUrl, presentIds, locationId, targetStudentId, studentName } = req.body;
 
     if (!actionUrl) return res.status(400).json({ success: false });
 
@@ -231,7 +350,6 @@ router.post('/save-attendance', async (req, res) => {
                 params.append('seen[]', id); 
             });
         } else {
-            // S'il n'y a plus personne de coché, on envoie un paramètre vide
             params.append('seen[]', ''); 
         }
 
@@ -239,6 +357,11 @@ router.post('/save-attendance', async (req, res) => {
         await client.post(actionUrl, params.toString(), {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
+
+        // 🎯 LE SECRET EST LÀ : On ne planifie QUE l'étudiant qu'on vient de cliquer
+        if (locationId && targetStudentId) {
+            planifierValidationSiuaps(targetStudentId, locationId, studentName);
+        }
 
         return res.json({ success: true });
 

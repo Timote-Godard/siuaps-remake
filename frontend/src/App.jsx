@@ -4,7 +4,7 @@ import SiuapsDashboard from './components/SiuapsDashboard';
 import Validations from './components/Validations'; 
 import Registration from './components/Registration';
 import Hub from './components/Hub';
-import EntDashboard from './components/EntDashboard'; // À créer plus tard
+// import EntDashboard from './components/EntDashboard'; // À créer plus tard
 
 const App = () => {
   const [userData, setUserData] = useState(null);
@@ -12,30 +12,66 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('AGENDA');
   const [activeTabSiuaps, setActiveTabSiuaps] = useState("rdv");
   
-  // 🧭 LA BOUSSOLE DE L'APPLICATION (Au lieu des vieux booléens)
-  // Valeurs possibles : 'LOGIN', 'HUB', 'SIUAPS_DASHBOARD', 'SIUAPS_VALIDATIONS', 'SIUAPS_REGISTRATION', 'ENT_DASHBOARD'
   const [currentStep, setCurrentStep] = useState('LOGIN'); 
-  const [selectedUrl, setSelectedUrl] = useState(null); // Toujours utile pour passer l'URL aux validations
+  const [selectedUrl, setSelectedUrl] = useState(null);
+  
   const [mailData, setMailData] = useState({ unreadCount: 0, recentMails: [], loading: true });
+  // 🌟 Modification ici : on prépare un bel état pour Moodle
+  const [moodleData, setMoodleData] = useState({ courses: [], loading: true, error: null });
 
-  // 1. VÉRIFICATION AU LANCEMENT
+  // 🌟 NOUVELLE FONCTION : Charge les données secondaires une fois connecté
+  const loadBackgroundData = async () => {
+    // 1. Chargement des Mails
+    const fetchMails = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/mails', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) {
+          setMailData({ unreadCount: data.unreadCount, recentMails: data.recentMails, loading: false });
+        } else {
+          setMailData(prev => ({ ...prev, loading: false }));
+        }
+      } catch (err) {
+        setMailData(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    // 2. Chargement de Moodle
+    const fetchMoodle = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/moodle/courses', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) {
+          setMoodleData({ courses: data.courses, loading: false, error: null });
+        } else {
+          setMoodleData({ courses: [], loading: false, error: data.error || "Erreur serveur" });
+        }
+      } catch (err) {
+        setMoodleData({ courses: [], loading: false, error: "Impossible de joindre le serveur" });
+      }
+    };
+
+    await fetchMails();
+    await fetchMoodle();
+  };
+
+  // VÉRIFICATION AU LANCEMENT
   useEffect(() => {
     if (localStorage.getItem('siuaps_data')) {
       setIsCheckingSession(true);
       const checkSession = async () => {
         try {
-          const res = await fetch('https://7c34f7875b6405.lhr.life/api/verify');
+          const res = await fetch('http://localhost:5000/api/verify');
           const data = await res.json();
 
           if (data.success) {
             const savedData = localStorage.getItem('siuaps_data');
             if (savedData) {
               setUserData(JSON.parse(savedData));
-              // Si connecté -> On va direct sur le HUB !
               setCurrentStep('HUB'); 
+              loadBackgroundData(); // 🌟 Lancement des chargements invisibles
             }
           } else {
-            // Si la session a expiré sur le serveur, on nettoie
             localStorage.removeItem('siuaps_data');
             setCurrentStep('LOGIN');
           }
@@ -47,48 +83,28 @@ const App = () => {
       };
       checkSession();
     }
-
-
-    const fetchMails = async () => {
-            try {
-                const res = await fetch('https://7c34f7875b6405.lhr.life/api/mails', {
-                    credentials: 'include' 
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    setMailData({
-                        unreadCount: data.unreadCount,
-                        recentMails: data.recentMails,
-                        loading: false
-                    });
-                } else {
-                    setMailData(prev => ({ ...prev, loading: false }));
-                }
-            } catch (err) {
-                setMailData(prev => ({ ...prev, loading: false }));
-            }
-        };
-        fetchMails();
-
   }, []);
 
 
-  // 2. ACTIONS GLOBALES
+  // ACTIONS GLOBALES
   const handleLogout = async () => {
-    await fetch('https://7c34f7875b6405.lhr.life/api/logout', { method: 'POST' });
+    await fetch('http://localhost:5000/api/logout', { method: 'POST' });
     setUserData(null);
     localStorage.removeItem('siuaps_data');
-    setCurrentStep('LOGIN'); // Retour à la case départ
+    // On réinitialise les états
+    setMailData({ unreadCount: 0, recentMails: [], loading: true });
+    setMoodleData({ courses: [], loading: true, error: null });
+    setCurrentStep('LOGIN');
   };
 
   const handleLoginSuccess = (data) => {
     setUserData(data.user);
     localStorage.setItem('siuaps_data', JSON.stringify(data.user));
-    setCurrentStep('HUB'); // Après le login -> Direction le HUB
+    setCurrentStep('HUB'); 
+    loadBackgroundData(); // 🌟 Lancement des chargements invisibles juste après le login
   };
 
-  // ÉCRAN DE CHARGEMENT BRUTALISTE
+  // ÉCRAN DE CHARGEMENT
   if (isCheckingSession) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-white border-8 border-green-600">
@@ -98,7 +114,7 @@ const App = () => {
     );
   }
 
-  // 3. LE ROUTEUR VISUEL (Très propre et facile à lire)
+  // LE ROUTEUR VISUEL
   return (
     <div className="app-container bg-white min-h-screen">
       
@@ -115,9 +131,9 @@ const App = () => {
               setCurrentStep('SIUAPS_VALIDATIONS'); 
           }}
           mailData={mailData}
+          moodleData={moodleData} // 🌟 On passe les données Moodle au Hub
           setActiveTabSiuaps={setActiveTabSiuaps}
           activeTabSiuaps={activeTabSiuaps}
-
           setActiveTab={setActiveTab}
           activeTab={activeTab}
           onNavigateToRegistration={() => setCurrentStep('SIUAPS_REGISTRATION')}
@@ -125,16 +141,11 @@ const App = () => {
       )}
 
       {currentStep === 'SIUAPS_VALIDATIONS' && (
-        <Validations 
-          url={selectedUrl} 
-          onBack={() => {setCurrentStep('HUB');}} 
-        />
+        <Validations url={selectedUrl} onBack={() => {setCurrentStep('HUB');}} />
       )}
 
       {currentStep === 'SIUAPS_REGISTRATION' && (
-        <Registration 
-          onBack={() => setCurrentStep('HUB')} 
-        />
+        <Registration onBack={() => setCurrentStep('HUB')} />
       )}
 
     </div>

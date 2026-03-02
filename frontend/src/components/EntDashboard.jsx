@@ -5,20 +5,59 @@ import SetupWizard from './SetupWizard';
 import ressources from '../assets/ressources_rennes1.json';
 
 // 🎨 1. PALETTE DE COULEURS NÉOBRUTALISTES
+// 🎨 1. PALETTE DE COULEURS NÉOBRUTALISTES
 const NEO_COLORS = [
     'bg-pink-300', 'bg-cyan-300', 'bg-green-400', 'bg-purple-300',
     'bg-orange-300', 'bg-blue-300', 'bg-rose-300', 'bg-lime-300', 'bg-yellow-300'
 ];
 
-const getCourseColor = (title) => {
-    if (!title) return 'bg-white';
+// 🛠️ 2. DICTIONNAIRE DE CUSTOMISATION DES COURS
+// Ajoute tes mots-clés (en minuscules) et l'URL de l'image correspondante
+const COURSE_RULES = [
+    {
+        keywords: ['ts', 'typescript'],
+        bgImage: 'url("https://upload.wikimedia.org/wikipedia/commons/4/4c/Typescript_logo_2020.svg")',
+        // bgImage: 'url("src/assets/edna.png")',
+        color: 'bg-blue-400'
+    },
+    {
+        keywords: ['react', 'web'],
+        bgImage: 'url("https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg")',
+        color: 'bg-cyan-300'
+    },
+    {
+        keywords: ['sport', 'eps', 'siuaps'],
+        bgImage: 'url("https://cdn-icons-png.flaticon.com/512/553/553823.png")', // Icône d'haltère
+        color: 'bg-green-400'
+    },
+    {
+        keywords: ['math', 'analyse', 'algèbre'],
+        bgImage: 'url("https://cdn-icons-png.flaticon.com/512/1046/1046229.png")', // Icône math
+        color: 'bg-red-300'
+    }
+];
+
+// 🧠 3. LE DISTRIBUTEUR DE STYLES
+const getCourseTheme = (title) => {
+    if (!title) return { colorClass: 'bg-white', bgImage: null };
+    
+    const lowerTitle = title.toLowerCase();
+
+    // 1. On cherche si le titre matche avec une de nos règles custom
+    for (let rule of COURSE_RULES) {
+        if (rule.keywords.some(kw => lowerTitle.includes(kw))) {
+            return { colorClass: rule.color, bgImage: rule.bgImage };
+        }
+    }
+
+    // 2. Si aucune règle ne correspond, on génère une couleur aléatoire (ton ancien système)
     const coreTitle = title.split(' ')[0].toLowerCase(); 
     let hash = 0;
     for (let i = 0; i < coreTitle.length; i++) {
         hash = coreTitle.charCodeAt(i) + ((hash << 5) - hash);
     }
     const index = Math.abs(hash) % NEO_COLORS.length;
-    return NEO_COLORS[index];
+    return { colorClass: NEO_COLORS[index], bgImage: null };
 };
 
 // 🧠 NOUVEAU : Algorithme de calcul des chevauchements de cours
@@ -113,8 +152,8 @@ const EntDashboard = ({ onBack }) => {
     });
 
     const START_HOUR = 8;
-    const END_HOUR = 20;
-    const HOUR_HEIGHT = 90; 
+    const END_HOUR = 21;
+    const HOUR_HEIGHT = 60; 
     const touchStartX = useRef(null);
 
     const goToNext = () => {
@@ -253,20 +292,25 @@ const EntDashboard = ({ onBack }) => {
     return (
         <div className="p-4 min-h-screen bg-yellow-200 font-mono text-black">
             <div className="max-w-7xl mx-auto">
+                <header className="flex justify-between items-end border-b-8 border-black pb-4 mb-6">
+                        <h1 className="text-5xl font-black uppercase italic">Agenda</h1>
+                        <button onClick={() => setShowWizard(true)} className="relative right-0 top-0 border-2 border-black p-2 bg-white hover:bg-black hover:text-white cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
+                            <Settings size={18} />
+                        </button>
+                    </header>
                 
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white border-3 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <button onClick={onBack} className="self-start md:hidden border-3 border-black p-2 hover:bg-black hover:text-white transition-colors cursor-pointer font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
-                        <ArrowLeft size={20} />
-                    </button>
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 ]">
+
+                    
 
                     <div className="flex items-center gap-4">
-                        <button onClick={goToPrev} className="border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronLeft size={24} /></button>
+                        <button onClick={goToPrev} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronLeft size={24} /></button>
                         
                         <div className="text-center min-w-[200px]">
-                            <span className="font-black uppercase block text-[10px] opacity-60">
+                            <span className="font-black uppercase block text-sm opacity-60">
                                 {window.innerWidth < 768 ? "Planning du jour" : "Aperçu Semaine"}
                             </span>
-                            <span className="font-black text-lg sm:text-xl italic uppercase">
+                            <span className="font-black text-3xl sm:text-xl italic uppercase">
                                 {window.innerWidth < 768 
                                     ? `${daysOfWeek[currentDayIndex].label} ${daysOfWeek[currentDayIndex].date.getDate()} ${daysOfWeek[currentDayIndex].date.toLocaleDateString('fr-FR', {month:'short'})}`
                                     : `${daysOfWeek[0].date.toLocaleDateString('fr-FR', {day:'numeric', month:'short'})} - ${daysOfWeek[4].date.toLocaleDateString('fr-FR', {day:'numeric', month:'short'})}`
@@ -274,32 +318,18 @@ const EntDashboard = ({ onBack }) => {
                             </span>
                         </div>
 
-                        <button onClick={goToNext} className="border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronRight size={24} /></button>
+                        <button onClick={goToNext} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronRight size={24} /></button>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <div className="relative w-full md:w-64 flex-1">
-                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input 
-                                type="text" placeholder="Filtrer matieres..." 
-                                value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full border-2 border-black p-2 pl-8 font-bold uppercase text-xs outline-none focus:bg-yellow-200"
-                            />
-                        </div>
-                        {/* BOUTON SETTINGS DANS LA BARRE SUPERIEURE */}
-                        <button onClick={() => setShowWizard(true)} className="border-2 border-black p-2 bg-cyan-300 hover:bg-cyan-400 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
-                            <Settings size={18} />
-                        </button>
-                    </div>
                 </div>
 
                 <div 
-                    className="relative flex border-3 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
+                    className="relative flex overflow-hidden"
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}
                     style={{ minHeight: (END_HOUR - START_HOUR) * HOUR_HEIGHT }} 
                 >
-                    <div className="w-12 pt-3 sm:w-20 border-r-2 border-black bg-gray-50 flex-shrink-0 z-20">
+                    <div className="w-12 pt-3 mr-2 sm:w-20 border-r-2 border-black flex-shrink-0 z-20">
                         {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
                             <div key={i} style={{ height: HOUR_HEIGHT }} className="relative border-b border-black/5">
                                 <span className="absolute -top-3 left-0 w-full text-center text-[10px] font-black">{(START_HOUR + i)}H</span>
@@ -307,7 +337,7 @@ const EntDashboard = ({ onBack }) => {
                         ))}
                     </div>
 
-                    <div className="pt-2 flex-1 relative overflow-hidden">
+                    <div className="flex-1 relative overflow-hidden">
                         <AnimatePresence initial={false} custom={direction}>
                             <motion.div
                                 key={animationKey}
@@ -334,7 +364,7 @@ const EntDashboard = ({ onBack }) => {
                                     const isToday = new Date().toLocaleDateString('en-CA') === day.iso;
 
                                     return (
-                                        <div key={day.iso} className="flex-1 border-r-2 border-black/10 relative">
+                                        <div key={day.iso} className="flex-1 mt-2 border-r-2 border-black/10 relative">
                                             
                                             {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
                                                 <div key={i} style={{ height: HOUR_HEIGHT, top: i * HOUR_HEIGHT }} className="absolute border-b border-black/5 w-full"></div>
@@ -351,22 +381,41 @@ const EntDashboard = ({ onBack }) => {
 
                                             {/* RENDU DES COURS ABSOLUS */}
                                             {loading ? "" : 
-                                                laidOutEvents.map((course, cIdx) => (
-                                                    <div key={cIdx} 
-                                                        style={calculateStyles(course)}
-                                                        // 💡 J'ai supprimé "left-1 right-1" de Tailwind car position gérée en inline maintenant !
-                                                        className={`absolute border-2 border-black p-1 sm:p-2 overflow-hidden hover:z-40 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all cursor-pointer ${getCourseColor(course.titre)}`}
-                                                    >
-                                                        <div className="bg-black text-white text-[8px] px-1 font-bold inline-block mb-1">
-                                                            {new Date(course.debut).getHours()}H{String(new Date(course.debut).getMinutes()).padStart(2, '0')}
-                                                        </div>
-                                                        <h4 className="font-black text-[9px] sm:text-[10px] leading-tight uppercase mb-1 break-words">{course.titre}</h4>
-                                                        <div className="flex items-center gap-1 text-[8px] font-bold opacity-80 truncate bg-white/50 w-fit px-1 border border-black">
-                                                            <MapPin size={8} strokeWidth={3} /> {course.salle}
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            }
+    laidOutEvents.map((course, cIdx) => {
+        // 🌟 On récupère le thème (couleur + image éventuelle)
+        const theme = getCourseTheme(course.titre);
+
+        return (
+            <div key={cIdx} 
+                style={calculateStyles(course)}
+                className={`absolute border-2 border-black p-1 sm:p-2 overflow-hidden hover:z-40 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 transition-all cursor-pointer ${theme.colorClass}`}
+            >
+                {/* 🎨 L'IMAGE DE FOND EN FILIGRANE */}
+                {theme.bgImage && (
+                    <div 
+                        className="absolute bottom-[-10px] right-[-10px] w-16 h-16 opacity-30 -rotate-12 bg-no-repeat bg-contain bg-center pointer-events-none"
+                        style={{ backgroundImage: theme.bgImage }}
+                    />
+                )}
+
+                {/* 📝 LE CONTENU (Au dessus de l'image grâce au z-10) */}
+                <div className="relative z-10 flex flex-col h-full pointer-events-none">
+                    <div className="bg-black text-white text-[8px] px-1 font-bold w-fit mb-1">
+                        {new Date(course.debut).getHours()}H{String(new Date(course.debut).getMinutes()).padStart(2, '0')}
+                    </div>
+                    
+                    <h4 className="font-black text-[9px] sm:text-[10px] leading-tight uppercase mb-1 break-words">
+                        {course.titre}
+                    </h4>
+                    
+                    <div className="mt-auto flex items-center gap-1 text-[12px] font-bold opacity-90 truncate bg-white border border-black px-1 w-fit shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                        <MapPin size={8} strokeWidth={3} /> {course.salle}
+                    </div>
+                </div>
+            </div>
+        );
+    })
+}
                                         </div>
                                     );
                                 })}

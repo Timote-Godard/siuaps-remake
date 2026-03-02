@@ -93,7 +93,7 @@ const SetupWizard = ({ data, initialSelections = [], onComplete, onClose }) => {
                                         onClick={() => handleSelectNode(option)}
                                         className={`flex items-center justify-between p-4 border-4 border-black text-left transition-all cursor-pointer group active:translate-y-1 active:translate-x-1 active:shadow-none
                                             ${isSelected 
-                                                ? 'bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' 
+                                                ? 'bg-green-500 text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' 
                                                 : 'bg-white hover:bg-yellow-100 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'
                                             }`}
                                     >
@@ -103,7 +103,7 @@ const SetupWizard = ({ data, initialSelections = [], onComplete, onClose }) => {
                                         
                                         {/* Icône dynamique (Dossier vs Checkbox) */}
                                         {isLeaf ? (
-                                            <div className={`shrink-0 w-8 h-8 border-4 border-black rounded-full flex items-center justify-center transition-colors ${isSelected ? 'bg-green-400 text-black border-white' : 'bg-white text-transparent'}`}>
+                                            <div className={`shrink-0 w-8 h-8 border-4 border-black rounded-full flex items-center justify-center transition-colors ${isSelected ? 'bg-white text-black' : 'bg-white text-transparent'}`}>
                                                 <Check size={16} strokeWidth={4} />
                                             </div>
                                         ) : (
@@ -119,7 +119,7 @@ const SetupWizard = ({ data, initialSelections = [], onComplete, onClose }) => {
 
             {/* BOUTON VALIDATION FLOTTANT (Apparaît si on a sélectionné au moins une matière) */}
             {selections.length > 0 && (
-                <div className="absolute bottom-0 left-0 w-full p-4 bg-white border-t-4 border-black z-20 shadow-[0px_-8px_20px_rgba(0,0,0,0.1)]">
+                <div className="absolute bottom-17 left-0 w-full p-4 bg-white border-t-4 border-black z-20 shadow-[0px_-8px_20px_rgba(0,0,0,0.1)]">
                     <button 
                         onClick={() => onComplete(selections)}
                         className="w-full max-w-3xl mx-auto bg-green-400 border-4 border-black p-4 font-black text-xl uppercase tracking-widest flex items-center justify-center gap-2 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-green-300 transition-all cursor-pointer"

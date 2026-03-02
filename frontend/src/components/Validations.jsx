@@ -1,34 +1,38 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Check, Loader2, History } from 'lucide-react'; // Ajout de l'icône History
+import { ArrowLeft, Search, Check, Loader2, History } from 'lucide-react';
 
 const Validations = ({ url, onBack }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [presentStudents, setPresentStudents] = useState(new Set());
-    const [justClicked, setJustClicked] = useState(null);
     
-    // 1. NOUVEL ÉTAT : Mode Archive
+    // Les 3 états vitaux
+    const [presentStudents, setPresentStudents] = useState(new Set()); // Pour Moodle
+    const [justClicked, setJustClicked] = useState(null);
+    const [siuapsValidated, setSiuapsValidated] = useState(new Set());
+    
     const [isArchiveMode, setIsArchiveMode] = useState(false);
+    // 🌟 NOUVEL ÉTAT POUR LA RECHERCHE DES OUBLIS
+    const [missingSearch, setMissingSearch] = useState("");
 
-    // Fonction pour recharger les données (utile quand on change de mode)
-    const fetchCreneaux = async (useArchive) => {
+    // 🌟 On ajoute le paramètre searchMissingName
+    const fetchCreneaux = async (useArchive, searchMissingName = "") => {
         try {
             setLoading(true);
             const res = await fetch('http://localhost:5000/api/validations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                // credentials: 'include', // (Si tu as activé la sécurité)
                 body: JSON.stringify({ 
                     url: url, 
-                    archive: useArchive // On envoie le mode au backend
+                    archive: useArchive,
+                    searchMissing: searchMissingName // 🌟 On l'envoie au Node.js
                 })
             });
             const result = await res.json();
             
             if (result.success) {
                 setData(result.slots);
-                // Mise à jour des présences (ton code actuel...)
                 const alreadyChecked = new Set();
                 result.slots.forEach(slot => {
                     slot.students.forEach(student => {
@@ -44,95 +48,89 @@ const Validations = ({ url, onBack }) => {
         }
     };
 
-
     const getFirstMatchingStudent = () => {
+        if (!groupedBlocks || groupedBlocks.length === 0) return null;
         const filteredStudents = groupedBlocks[0].studentsList.filter(student => 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase())
+            student.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        
         return filteredStudents[0];
     }
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && searchTerm !== '') {
             const studentToValidate = getFirstMatchingStudent();
-            
             if (studentToValidate) {
-                // On simule un clic sur sa carte !
                 toggleStudent(studentToValidate); 
-                // On vide la barre instantanément pour le prochain
                 setSearchTerm(''); 
             }
         }
     };
 
-    // Charger au montage
     useEffect(() => {
         if (url) fetchCreneaux(isArchiveMode);
     }, [url]);
 
-    // 2. ACTION : Quand on clique sur le bouton Archive
-    const handleToggleArchive = () => {
-        const nextMode = !isArchiveMode;
-        setIsArchiveMode(nextMode);
-        fetchCreneaux(nextMode); // On relance le scraping avec le nouveau mode
+    // 🌟 NOUVELLE ACTION : Exécuter la recherche d'oublis
+    const executeMissingSearch = () => {
+        if (missingSearch.trim() !== "") {
+            setIsArchiveMode(true);
+            fetchCreneaux(true, missingSearch.trim()); // On fouille les archives avec le nom
+        } else {
+            setIsArchiveMode(false);
+            fetchCreneaux(false, ""); // On remet à zéro
+        }
     };
 
     // ====================================================================
-    // 🧠 LA MAGIE EST ICI : FUSION DES CRÉNEAUX EN "BLOCS" (Midi / Soir)
+    // FUSION DES CRÉNEAUX EN "BLOCS" (Midi / Soir)
     // ====================================================================
     const groupedBlocks = useMemo(() => {
         if (!data) return [];
         const blocks = {};
 
         data.forEach(slot => {
-            // On sépare le Midi (12h-14h) du Soir (18h-20h)
             const isMidi = slot.horaire.includes('12:00') || slot.horaire.includes('13:00');
             const shift = isMidi ? 'MIDI' : 'SOIR';
-            const blockKey = `${slot.date}_${shift}`; // Ex: "lundi 16 février 2026_SOIR"
-
+            const blockKey = `${slot.date}_${shift}`;
 
             const maintenant = new Date();
             const heure = maintenant.getHours();
             
-            if (!(heure < 16 ^ shift === "SOIR") && !isArchiveMode) return
-
-            
+            // Filtre de l'heure (sauf si mode archive)
+            if (!(heure < 16 ^ shift === "SOIR") && !isArchiveMode) return;
 
             if (!blocks[blockKey]) {
                 blocks[blockKey] = {
                     id: blockKey,
                     date: slot.date,
                     shift: shift,
-                    slotsOriginaux: [], // On garde les infos des créneaux pour le backend
-                    etudiantsUniques: {} // Dictionnaire des étudiants
+                    slotsOriginaux: [],
+                    etudiantsUniques: {}
                 };
             }
 
             blocks[blockKey].slotsOriginaux.push(slot);
 
-            // On regroupe les étudiants par leur NOM
             slot.students.forEach(student => {
                 if (!blocks[blockKey].etudiantsUniques[student.name]) {
                     blocks[blockKey].etudiantsUniques[student.name] = {
                         name: student.name,
+                        staticId: student.staticId, // L'ID indestructible pour SIUAPS
                         avatar: student.avatar,
                         initials: student.initials,
-                        // On stocke TOUTES ses inscriptions (ex: il peut en avoir une pour 18h et une pour 19h)
                         inscriptions: [] 
                     };
                 }
                 
                 blocks[blockKey].etudiantsUniques[student.name].inscriptions.push({
-                    slotId: slot.id, // L'ID temporaire du créneau
-                    appointmentId: student.id, // L'ID de la checkbox Moodle
+                    slotId: slot.id, 
+                    appointmentId: student.id, 
                     horaire: slot.horaire,
                     actionUrl: slot.actionUrl
                 });
             });
         });
 
-        // On convertit le dictionnaire en tableau propre pour l'affichage, trié par ordre alphabétique
         return Object.values(blocks).map(block => ({
             ...block,
             studentsList: Object.values(block.etudiantsUniques).sort((a, b) => {
@@ -142,113 +140,131 @@ const Validations = ({ url, onBack }) => {
                 const aSortValue = (justClicked === a.name) ? false : aPresent;
                 const bSortValue = (justClicked === b.name) ? false : bPresent;
                 
-                if (aSortValue !== bSortValue) {
-                    return aSortValue ? 1 : -1;
-                }
+                if (aSortValue !== bSortValue) return aSortValue ? 1 : -1;
                 return a.name.localeCompare(b.name);
             })
         }));
-    }, [data, presentStudents, justClicked]);
+    }, [data, presentStudents, justClicked, isArchiveMode]);
 
-    // ====================================================================
-    // 🚀 LE MEGA-CLIC : VALIDE TOUTES LES HEURES D'UN ÉTUDIANT D'UN COUP
-    // ====================================================================
+
     const toggleStudent = async (student) => {
-        // Est-ce qu'il est déjà validé pour TOUTES ses heures ?
-        const isFullyPresent = student.inscriptions.every(ins => presentStudents.has(ins.appointmentId));
+        const isChecking = student.inscriptions.some(ins => !presentStudents.has(ins.appointmentId)); 
         const newSet = new Set(presentStudents);
 
         setJustClicked(student.name);
         
-        // Si oui, on décoche tout. Si non, on coche tout !
         student.inscriptions.forEach(ins => {
-            if (isFullyPresent) newSet.delete(ins.appointmentId);
+            if (!isChecking) newSet.delete(ins.appointmentId);
             else newSet.add(ins.appointmentId);
         });
-        setPresentStudents(newSet); // Mise à jour instantanée de l'UI
+        setPresentStudents(newSet); // MAJ UI instantanée (La carte devient noire)
 
         await new Promise(resolve => setTimeout(resolve, 100));
-        
         setJustClicked(null);
 
-        // On doit dire à Node.js de sauvegarder chaque créneau touché
-        // (Ex: S'il a 18h et 19h, on fait 2 requêtes invisibles au SIUAPS)
+        const locationId = url?.includes('7140') ? 2 : (url?.includes('7141') ? 1 : null);
         const slotsToUpdate = [...new Set(student.inscriptions.map(ins => ins.slotId))];
         
+        // 🌟 LA RÈGLE D'OR : On est sur le créneau actuel UNIQUEMENT si on n'est pas en mode archive
+        // (Le filtrage Midi/Soir de la journée est déjà géré par ton useMemo)
+        const isCurrentSlot = !isArchiveMode;
 
         slotsToUpdate.forEach(async (slotId) => {
             const originalSlot = data.find(s => s.id === slotId);
-            // On recalcule qui est présent pour CE créneau précis
             const presentIdsForThisSlot = originalSlot.students
                 .map(s => s.id)
                 .filter(id => newSet.has(id));
 
+            const specificInscription = student.inscriptions.find(ins => ins.slotId === slotId);
+
             try {
-                await fetch('http://localhost:5000/api/save-attendance', {
+                const res = await fetch('http://localhost:5000/api/save-attendance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         actionUrl: originalSlot.actionUrl, 
-                        presentIds: presentIdsForThisSlot 
+                        presentIds: presentIdsForThisSlot,
+                        locationId: locationId,
+                        // 🎯 On ne demande le script SIUAPS QUE si on coche ET qu'on est en direct !
+                        targetStudentId: (isChecking && isCurrentSlot) ? student.staticId : null, 
+                        studentName: student.name  
                     })
                 });
+
+                // ✅ Ajout Visuel du "✓" vert SEULEMENT si SIUAPS a été appelé (donc en direct)
+                if (res.ok && isChecking && isCurrentSlot) {
+                    setSiuapsValidated(prev => new Set(prev).add(specificInscription.appointmentId));
+                } else if (!isChecking) {
+                    setSiuapsValidated(prev => {
+                        const next = new Set(prev);
+                        next.delete(specificInscription.appointmentId);
+                        return next;
+                    });
+                }
             } catch (error) {
                 console.error("Erreur de sauvegarde :", error);
             }
         });
     };
 
-
-
-
     return (
         <div className="w-full max-w-3xl mx-auto bg-white min-h-screen flex flex-col shadow-[0px_0px_20px_rgba(0,0,0,0.1)]">
             
             <div className="sticky top-0 z-30 bg-white border-b-4 border-black mb-5 pb-4 pt-4 px-4 sm:px-6">
-                                <div className='flex mb-4 items-center'>
+                <div className='flex mb-4 items-center'>
                     <div className="flex items-center mb-4 gap-4">
-                                        <button onClick={onBack} className="shrink-0 hover:text-white hover:bg-black cursor-pointer flex items-center justify-center w-12 h-12 border-4 border-black font-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
-                                            <ArrowLeft size={24} strokeWidth={4} />
-                                        </button>
-                                        <h1 className="font-black uppercase text-2xl sm:text-3xl tracking-tight leading-none">
-                                            Valider <br/> Creneaux
-                                        </h1>
-                                    </div>
+                        <button onClick={onBack} className="shrink-0 hover:text-white hover:bg-black cursor-pointer flex items-center justify-center w-12 h-12 border-4 border-black font-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
+                            <ArrowLeft size={24} strokeWidth={4} />
+                        </button>
+                        <h1 className="font-black uppercase text-2xl sm:text-3xl tracking-tight leading-none">
+                            Valider <br/> Creneaux
+                        </h1>
+                    </div>
 
-                    {/* 3. LE BOUTON ARCHIVE */}
+                    <div className={`ml-auto flex items-center h-12 border-4 border-black transition-all 
+                        ${missingSearch.trim() ? 'shadow-none translate-x-1 translate-y-1' : 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white focus-within:translate-x-1 focus-within:translate-y-1 focus-within:shadow-none'}`}
+                    >
+                        <input 
+                            type="text"
+                            placeholder="Oublis (Nom)..."
+                            value={missingSearch}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setMissingSearch(val);
 
-                    
+                                if (val === "" && isArchiveMode) {
+                                    setIsArchiveMode(false);
+                                    fetchCreneaux(false, "");
+                                }
+                            }}
+
+                            onKeyDown={(e) => e.key === 'Enter' && executeMissingSearch()}
+                            className="h-full px-2 sm:px-3 w-28 sm:w-48 outline-none font-black uppercase text-xs sm:text-sm placeholder:text-gray-400 bg-white"
+                        />
                         <button 
-                            onClick={handleToggleArchive}
-                            className={`ml-auto h-12 text-lg cursor-pointer hover:bg-purple-500 active:shadow-none active:translate-x-1 active:translate-y-1 hover:text-white flex items-center gap-2 border-4 border-black p-2 font-black uppercase transition-all
-                                ${isArchiveMode 
-                                    ? 'bg-purple-500 text-white shadow-none translate-x-1 translate-y-1' 
-                                    : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-                                }`}
+                            onClick={executeMissingSearch}
+                            className={`h-full px-3 border-l-4 border-black flex items-center justify-center transition-colors 
+                                ${isArchiveMode && missingSearch.trim() ? 'bg-purple-500 text-white' : 'bg-yellow-300 hover:bg-yellow-400 text-black'}`}
                         >
                             <History size={20} strokeWidth={4} />
-                            archives
                         </button>
+                    </div>
                 </div>
             
-                            {/* BARRE DE RECHERCHE OPTIMISÉE POUCE */}
-                            <div className="sticky top-0 z-10 bg-white py-2">
-                <div className="relative flex items-center w-full">
-                    <Search className="absolute left-3 text-gray-500" size={24} strokeWidth={3} />
-                    <input 
-                        type="text" 
-                        placeholder="Chercher un étudiant..." 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="w-full border-4 border-black p-4 pl-12 text-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none transition-colors placeholder:text-gray-400 uppercase"
-                    />
+                <div className="sticky top-0 z-10 bg-white py-2">
+                    <div className="relative flex items-center w-full">
+                        <Search className="absolute left-3 text-gray-500" size={24} strokeWidth={3} />
+                        <input 
+                            type="text" 
+                            placeholder="Chercher un étudiant..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className="w-full border-4 border-black p-4 pl-12 text-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none transition-colors placeholder:text-gray-400 uppercase"
+                        />
+                    </div>
                 </div>
             </div>
-                        </div>
-                
-            
-            
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
@@ -257,16 +273,12 @@ const Validations = ({ url, onBack }) => {
                 </div>
             ) : (
                 <div className="space-y-8 mr-[8px]">
-                    {/* ON MAPPE SUR NOS NOUVEAUX BLOCS (Midi/Soir) */}
                     {groupedBlocks.map((block) => {
                         const filteredStudents = block.studentsList.filter(student => 
                             student.name.toLowerCase().includes(searchTerm.toLowerCase())
                         );
 
                         if (filteredStudents.length === 0) return null;
-
-
-                        
 
                         return (
                             <div key={block.id} className="border-4 border-black p-4 bg-gray-50 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
@@ -284,8 +296,7 @@ const Validations = ({ url, onBack }) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {filteredStudents.map((student,index) => {
-                                        // On vérifie s'il est coché partout où il est inscrit
+                                    {filteredStudents.map((student, index) => {
                                         const isFullyPresent = student.inscriptions.every(ins => presentStudents.has(ins.appointmentId));
 
                                         return (
@@ -313,13 +324,25 @@ const Validations = ({ url, onBack }) => {
                                                     </div>
                                                 </div>
 
-                                                {/* PETITES PILULES POUR MONTRER LES HEURES */}
+                                                {/* 🌟 ICI LE CODE A ÉTÉ MIS À JOUR POUR AFFICHER LE V VERT ! */}
                                                 <div className="flex flex-wrap gap-1 mt-1 pl-13">
-                                                    {student.inscriptions.map((ins,i) => (
-                                                        <span key={`pilule-${ins.appointmentId}-${i}`} className={`text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black ${presentStudents.has(ins.appointmentId) ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}>
-                                                            {ins.horaire.split('-')[0].trim()} {/* Affiche juste "18:00" ou "19:00" */}
-                                                        </span>
-                                                    ))}
+                                                    {student.inscriptions.map((ins, i) => {
+                                                        const isPresent = presentStudents.has(ins.appointmentId);
+                                                        const isSiuapsOk = siuapsValidated.has(ins.appointmentId);
+
+                                                        return (
+                                                            <span key={`pilule-${ins.appointmentId}-${i}`} 
+                                                                className={`flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black transition-colors ${isPresent ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'}`}
+                                                            >
+                                                                {ins.horaire.split('-')[0].trim()}
+                                                                
+                                                                {/* Le ✓ vert apparaît quand le serveur confirme l'action */}
+                                                                {isPresent && isSiuapsOk && (
+                                                                    <Check size={12} className="text-green-400 drop-shadow-[1px_1px_0_rgba(0,0,0,1)]" strokeWidth={4} />
+                                                                )}
+                                                            </span>
+                                                        );
+                                                    })}
                                                 </div>
                                             </button>
                                         );

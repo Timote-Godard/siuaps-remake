@@ -4,6 +4,7 @@ import { client, jar } from '../client.js';
 import ical from 'node-ical';
 import fs from 'fs';
 
+
 const router = express.Router();
 
 // =================================================================
@@ -369,12 +370,304 @@ router.post('/login', async (req, res) => {
 }); 
 
 
+// Remplace l'URL de base dans tes routes
+const MOODLE_FOAD_URL = 'https://foad.univ-rennes.fr';
+
+router.get('/moodle/courses', async (req, res) => {
+    try {
+        console.log(`\n--- 🚀 [MOODLE] CONNEXION ET EXTRACTION DES COURS ---`);
+
+        let currentUrl = 'https://foad.univ-rennes.fr/Shibboleth.sso/Login?entityID=urn%3Amace%3Acru.fr%3Afederation%3Auniv-rennes1.fr&target=https%3A%2F%2Ffoad.univ-rennes.fr%2Fauth%2Fshibboleth%2Findex.php';
+        let response;
+        let isConnected = false;
+
+        // 1. LE CRAWLER MANUEL (Le passe-muraille)
+        for (let i = 0; i < 10; i++) {
+            response = await client.get(currentUrl, {
+                maxRedirects: 0,
+                validateStatus: () => true,
+                headers: { ...ROBOT_HEADERS }
+            });
+
+            // Redirection (301, 302, 303)
+            if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                let nextUrl = response.headers.location;
+                if (!nextUrl.startsWith('http')) nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+                currentUrl = nextUrl;
+                continue;
+            }
+
+            // Formulaire SAML caché (200)
+            const $ = cheerio.load(typeof response.data === 'string' ? response.data : '');
+            const formAction = $('form').attr('action') || '';
+            const samlResponse = $('input[name="SAMLResponse"]').val();
+
+            if (samlResponse && formAction) {
+                console.log(`🎟️ Formulaire SAML intercepté, on passe la douane...`);
+                const formData = new URLSearchParams();
+                $('input[type="hidden"], input[type="text"]').each((_, el) => {
+                    const name = $(el).attr('name');
+                    if (name) formData.append(name, $(el).attr('value') || '');
+                });
+
+                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + formAction;
+                
+                response = await client.post(postUrl, formData.toString(), {
+                    maxRedirects: 0,
+                    validateStatus: () => true,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...ROBOT_HEADERS }
+                });
+
+                if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                    currentUrl = response.headers.location;
+                    continue;
+                }
+            }
+
+            // Arrivée sur Moodle
+            if (response.status === 200) {
+                console.log(`✅ Arrivé sur Moodle !`);
+                isConnected = true;
+                break;
+            }
+        }
+
+        if (!isConnected) {
+            return res.status(401).json({ success: false, error: "Échec de l'authentification Moodle." });
+        }
+
+        // 2. EXTRACTION DE LA CLÉ SECRÈTE (Sesskey)
+        const html = response.data;
+        const sesskeyMatch = html.match(/"sesskey":"([^"]+)"/) || html.match(/sesskey=([^&"]+)/);
+        
+        if (!sesskeyMatch) {
+            return res.status(500).json({ success: false, error: "Clé de session (sesskey) introuvable." });
+        }
+        const sesskey = sesskeyMatch[1];
+        console.log("🗝️ Sesskey trouvée :", sesskey);
+
+        // 3. L'APPEL API MAGIQUE (On demande le JSON des cours directement)
+        console.log("📡 Demande de la liste des cours à l'API interne...");
+        const apiResponse = await client.post(`https://foad.univ-rennes.fr/lib/ajax/service.php?sesskey=${sesskey}`, [{
+            index: 0,
+            methodname: 'core_course_get_enrolled_courses_by_timeline_classification',
+            args: { 
+                offset: 0, 
+                limit: 50, 
+                classification: 'all', // Prendre tous les cours ('inprogress' pour ceux en cours)
+                sort: 'fullname' 
+            }
+        }], {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        // 4. FORMATAGE ET ENVOI À TON FRONTEND REACT
+        const apiData = apiResponse.data[0].data;
+        
+        if (!apiData || !apiData.courses) {
+            throw new Error("L'API Moodle a renvoyé un résultat vide.");
+        }
+
+        const courses = apiData.courses.map(c => ({
+            id: c.id.toString(),
+            name: c.fullname,
+            category: c.coursecategory,
+            image: c.courseimage,
+            url: c.viewurl
+        }));
+
+        console.log(`🎓 ${courses.length} cours extraits avec succès !`);
+        res.json({ success: true, count: courses.length, courses });
+
+    } catch (error) {
+        console.error("🔥 Erreur Moodle :", error.message);
+        res.status(500).json({ success: false, error: "Impossible de récupérer les cours." });
+    }
+});
+
+router.get('/moodle/debug', async (req, res) => {
+    try {
+        console.log(`\n--- 🚀 [MOODLE] DÉMARRAGE DU CRAWLER MANUEL ---`);
+
+        // Le point de départ : le bouton de connexion Moodle
+        let currentUrl = 'https://foad.univ-rennes.fr/Shibboleth.sso/Login?entityID=urn%3Amace%3Acru.fr%3Afederation%3Auniv-rennes1.fr&target=https%3A%2F%2Ffoad.univ-rennes.fr%2Fauth%2Fshibboleth%2Findex.php';
+        let response;
+
+        // Boucle de sauts manuels (inspirée de ta route /mails)
+        for (let i = 0; i < 10; i++) {
+            console.log(`\n[SAUT ${i + 1}] 🌐 Cible : ${currentUrl.split('?')[0]}`);
+
+            // On fait la requête en interdisant à Axios de changer de page tout seul
+            response = await client.get(currentUrl, {
+                maxRedirects: 0, // 🔴 C'EST ÇA LE SECRET !
+                validateStatus: () => true,
+                headers: { ...ROBOT_HEADERS }
+            });
+
+            console.log(`[SAUT ${i + 1}] 📥 Code HTTP : ${response.status}`);
+
+            // 🔀 Cas A : Redirection classique (301, 302, 303)
+            if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                let nextUrl = response.headers.location;
+                if (!nextUrl.startsWith('http')) {
+                    nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+                }
+                currentUrl = nextUrl;
+                continue; // On passe au saut suivant
+            }
+
+            // 🎟️ Cas B : Le fameux formulaire SAML (Code 200)
+            const $ = cheerio.load(typeof response.data === 'string' ? response.data : '');
+            const formAction = $('form').attr('action') || '';
+            const samlResponse = $('input[name="SAMLResponse"]').val();
+
+            if (samlResponse && formAction) {
+                console.log(`[SAUT ${i + 1}] 🎯 Formulaire SAML détecté ! Validation vers Moodle...`);
+                
+                const formData = new URLSearchParams();
+                $('input[type="hidden"], input[type="text"]').each((_, el) => {
+                    const name = $(el).attr('name');
+                    if (name) formData.append(name, $(el).attr('value') || '');
+                });
+
+                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + formAction;
+                
+                // On envoie le formulaire SAML
+                response = await client.post(postUrl, formData.toString(), {
+                    maxRedirects: 0,
+                    validateStatus: () => true,
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        ...ROBOT_HEADERS 
+                    }
+                });
+
+                // Si le POST nous redirige, on suit
+                if (response.status >= 300 && response.status < 400 && response.headers.location) {
+                    currentUrl = response.headers.location;
+                    continue;
+                }
+            }
+
+            // 🏁 Cas C : Si pas de redirection et pas de SAML, on est arrivé !
+            if (response.status === 200) {
+                console.log(`✅ Atterrissage définitif !`);
+                break;
+            }
+        }
+
+        // On vérifie le trophée final
+        const foadCookies = jar.getCookiesSync('https://foad.univ-rennes.fr');
+        console.log("\n🍪 Cookies FOAD obtenus :", foadCookies.map(c => c.key));
+
+        res.send(response.data);
+
+    } catch (error) {
+        console.error("🔥 Erreur Crawler :", error.message);
+        res.status(500).send(error.message);
+    }
+});
+
+// 2️⃣ LE SCANNER DE COURS : Extrait le contenu (Chapitres, PDF, Devoirs)
+router.get('/moodle/course/:id', async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const response = await client.get(`https://moodle.univ-rennes1.fr/course/view.php?id=${courseId}`);
+        const $ = cheerio.load(response.data);
+        
+        const courseContent = [];
+
+        // Moodle divise les cours en "Sections" (li.section.main)
+        $('li.section.main').each((i, sectionEl) => {
+            // Le titre de la section (ex: "Semaine 1 : Introduction")
+            const sectionTitle = $(sectionEl).find('h3.sectionname, h3.section-title').text().trim() || `Section ${i + 1}`;
+            const modules = [];
+
+            // A l'intérieur d'une section, on cherche les "activités" (PDF, dossiers, liens)
+            $(sectionEl).find('li.activity').each((j, modEl) => {
+                const linkTag = $(modEl).find('a');
+                
+                if (linkTag.length > 0) {
+                    const url = linkTag.attr('href');
+                    
+                    // Astuce Cheerio : Moodle met un <span> caché pour les malvoyants (ex: "Fichier"). 
+                    // On cible précisément le nom de l'instance pour avoir un texte propre.
+                    let name = linkTag.find('.instancename').clone().children().remove().end().text().trim();
+                    if (!name) name = linkTag.text().trim();
+
+                    // On détermine le type de fichier grâce à l'URL Moodle
+                    let type = 'unknown';
+                    if (url.includes('resource/view.php')) type = 'file'; // Souvent un PDF ou PPT
+                    else if (url.includes('folder/view.php')) type = 'folder';
+                    else if (url.includes('assign/view.php')) type = 'assignment';
+                    else if (url.includes('forum/view.php')) type = 'forum';
+                    else if (url.includes('url/view.php')) type = 'link';
+
+                    modules.push({ name, url, type });
+                }
+            });
+
+            // On ajoute la section seulement si elle contient des documents
+            if (modules.length > 0) {
+                courseContent.push({ sectionTitle, modules });
+            }
+        });
+
+        const courseName = $('h1').first().text().trim() || "Détail du cours";
+
+        res.json({ success: true, courseName, sections: courseContent });
+    } catch (error) {
+        console.error("Erreur Contenu Moodle :", error.message);
+        res.status(500).json({ success: false, error: "Impossible d'extraire ce cours" });
+    }
+});
+
+router.get('/moodle/download', async (req, res) => {
+    try {
+        const fileUrl = req.query.url;
+        if (!fileUrl) return res.status(400).send("URL manquante");
+
+        // On vérifie que l'URL appartient bien à la FOAD pour éviter les failles de sécurité
+        if (!fileUrl.startsWith(MOODLE_FOAD_URL)) {
+            return res.status(403).send("Domaine non autorisé");
+        }
+
+        const response = await client.get(fileUrl, { responseType: 'stream' });
+        
+        // On recopie les headers pour que le navigateur sache que c'est un PDF/ZIP
+        res.set('Content-Type', response.headers['content-type']);
+        res.set('Content-Disposition', response.headers['content-disposition']);
+        
+        response.data.pipe(res);
+    } catch (error) {
+        res.status(500).send("Erreur de transfert FOAD");
+    }
+});
+
+const purgerCookiesDomaine = (url) => {
+    const cookies = jar.getCookiesSync(url);
+    cookies.forEach(c => {
+        // On écrase le cookie avec une date d'expiration dans le passé pour le tuer
+        jar.setCookieSync(`${c.key}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=${c.domain}; path=${c.path}`, url);
+    });
+};
+
+
 // -----------------------------------------------------------------
 // ROUTE MAILS (100% Cookies, Crawler Manuel, Uniforme Strict)
 // -----------------------------------------------------------------
 router.get('/mails', async (req, res) => {
     try {
         console.log("\n🚀 [MAILS] 1. Démarrage du Crawler Manuel vers Zimbra...");
+
+        // 🧼 LE SECRET EST LÀ : On tue les vieux tickets SAML pour éviter la boucle infinie
+        purgerCookiesDomaine('https://ident-shib.univ-rennes1.fr');
+        purgerCookiesDomaine('https://sp.partage.renater.fr');
+        console.log("🧹 Mémoire SAML purgée. Le robot part propre !");
 
         let currentUrl = 'https://partage.univ-rennes1.fr/';
         let response;
@@ -437,27 +730,36 @@ router.get('/mails', async (req, res) => {
             );
 
             if (isAutoSubmit) {
-                console.log(`[SAUT ${i + 1}] 🎟️ Formulaire de rebond détecté vers : ${formAction.substring(0, 50)}...`);
+                // 1. Construction et NETTOYAGE de l'URL (Correction du bug du double slash `//`)
+                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + (formAction.startsWith('/') ? formAction : '/' + formAction);
+                
+                // On vire les doubles slashs (sauf le https://)
+                postUrl = postUrl.replace(/([^:]\/)\/+/g, "$1");
+
+                console.log(`[SAUT ${i + 1}] 🎟️ Formulaire SAML intercepté ! Tir vers : ${postUrl}`);
+                
                 const formData = new URLSearchParams();
                 $('input[type="hidden"], input[type="text"]').each((_, el) => {
                     const name = $(el).attr('name');
                     if (name) formData.append(name, $(el).attr('value') || '');
                 });
 
-                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + formAction;
-                
+                // 2. LE POST AVEC LE BADGE "REFERER"
                 response = await client.post(postUrl, formData.toString(), {
                     maxRedirects: 0,
                     validateStatus: () => true,
                     headers: { 
                         'Content-Type': 'application/x-www-form-urlencoded',
+                        'Referer': currentUrl, // 🛡️ L'astuce qui débloque Renater !
                         ...ROBOT_HEADERS 
                     }
                 });
 
                 if (response.status >= 300 && response.status < 400 && response.headers.location) {
                     let nextUrl = response.headers.location;
-                    if (!nextUrl.startsWith('http')) nextUrl = new URL(postUrl).origin + nextUrl;
+                    if (!nextUrl.startsWith('http')) nextUrl = new URL(postUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
+                    
+                    console.log(`[SAUT ${i + 1}] ↪️ Redirection post-SAML vers : ${nextUrl}`);
                     currentUrl = nextUrl;
                     continue;
                 }

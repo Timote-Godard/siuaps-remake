@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { CalendarDays, Dumbbell, Mail, BookOpen, LogOut } from 'lucide-react';
 import EntDashboard from './EntDashboard';
 import SiuapsDashboard from './SiuapsDashboard';
-import MailDashboard from './MailDashboard'; // 👈 On importe le nouveau dashboard
+import MailDashboard from './MailDashboard';
+import MoodleDashboard from './MoodleDashboard'; // 👈 On importe le MoodleDashboard
 
-const Hub = ({ userData, mailData, onLogout, activeTab, setActiveTab, onNavigateToSlots, onNavigateToRegistration, activeTabSiuaps, setActiveTabSiuaps }) => {
+const Hub = ({ userData, mailData, moodleData, onLogout, activeTab, setActiveTab, onNavigateToSlots, onNavigateToRegistration, activeTabSiuaps, setActiveTabSiuaps }) => {
     
-
-    
-
     return (
         <div className="h-screen w-screen flex flex-col bg-[#F0F0F0] overflow-hidden selection:bg-yellow-300">
             
@@ -28,20 +26,13 @@ const Hub = ({ userData, mailData, onLogout, activeTab, setActiveTab, onNavigate
                     /> 
                 )}
 
-                {/* 🌟 ICI : ON REMPLACE LE BOUTON PAR LE DASHBOARD COMPLET */}
                 {activeTab === 'MAILS' && (
                     <MailDashboard mailData={mailData} />
                 )}
 
+                {/* 🌟 ICI : On passe la prop moodleData reçue de App.jsx */}
                 {activeTab === 'MOODLE' && (
-                    <div className="h-full flex items-center justify-center border-4 border-black m-4 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                        <button onClick={onLogout} className="cursor-pointer absolute hover:translate-y-[-2px]  hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] top-15 right-15 border-2 border-black p-2 font-black bg-red-100 uppercase hover:bg-red-600 hover:text-white flex items-center gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                            <LogOut size={18} /> Déconnexion
-                        </button>
-                        <a href="https://moodle.univ-rennes1.fr" target="_blank" rel="noreferrer" className="text-4xl font-black uppercase underline hover:text-green-600">
-                            Ouvrir Moodle
-                        </a>
-                    </div>
+                    <MoodleDashboard moodleData={moodleData} onLogout={onLogout} />
                 )}
             </div>
 
@@ -56,7 +47,6 @@ const Hub = ({ userData, mailData, onLogout, activeTab, setActiveTab, onNavigate
                     icon={<Dumbbell size={24} strokeWidth={3} />} label="Sport" bg="bg-green-400"
                 />
                 
-                {/* BOUTON NAV MAILS AVEC INDICATEUR */}
                 <NavButton 
                     id="MAILS" current={activeTab} setTab={setActiveTab} 
                     icon={
@@ -74,8 +64,6 @@ const Hub = ({ userData, mailData, onLogout, activeTab, setActiveTab, onNavigate
                     id="MOODLE" current={activeTab} setTab={setActiveTab} 
                     icon={<BookOpen size={24} strokeWidth={3} />} label="Moodle" bg="bg-pink-300"
                 />
-
-                
                 
             </nav>
         </div>
