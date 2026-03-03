@@ -489,89 +489,6 @@ router.get('/moodle/courses', async (req, res) => {
     }
 });
 
-router.get('/moodle/debug', async (req, res) => {
-    try {
-        console.log(`\n--- 🚀 [MOODLE] DÉMARRAGE DU CRAWLER MANUEL ---`);
-
-        // Le point de départ : le bouton de connexion Moodle
-        let currentUrl = 'https://foad.univ-rennes.fr/Shibboleth.sso/Login?entityID=urn%3Amace%3Acru.fr%3Afederation%3Auniv-rennes1.fr&target=https%3A%2F%2Ffoad.univ-rennes.fr%2Fauth%2Fshibboleth%2Findex.php';
-        let response;
-
-        // Boucle de sauts manuels (inspirée de ta route /mails)
-        for (let i = 0; i < 10; i++) {
-            console.log(`\n[SAUT ${i + 1}] 🌐 Cible : ${currentUrl.split('?')[0]}`);
-
-            // On fait la requête en interdisant à Axios de changer de page tout seul
-            response = await client.get(currentUrl, {
-                maxRedirects: 0, // 🔴 C'EST ÇA LE SECRET !
-                validateStatus: () => true,
-                headers: { ...ROBOT_HEADERS }
-            });
-
-            console.log(`[SAUT ${i + 1}] 📥 Code HTTP : ${response.status}`);
-
-            // 🔀 Cas A : Redirection classique (301, 302, 303)
-            if (response.status >= 300 && response.status < 400 && response.headers.location) {
-                let nextUrl = response.headers.location;
-                if (!nextUrl.startsWith('http')) {
-                    nextUrl = new URL(currentUrl).origin + (nextUrl.startsWith('/') ? '' : '/') + nextUrl;
-                }
-                currentUrl = nextUrl;
-                continue; // On passe au saut suivant
-            }
-
-            // 🎟️ Cas B : Le fameux formulaire SAML (Code 200)
-            const $ = cheerio.load(typeof response.data === 'string' ? response.data : '');
-            const formAction = $('form').attr('action') || '';
-            const samlResponse = $('input[name="SAMLResponse"]').val();
-
-            if (samlResponse && formAction) {
-                console.log(`[SAUT ${i + 1}] 🎯 Formulaire SAML détecté ! Validation vers Moodle...`);
-                
-                const formData = new URLSearchParams();
-                $('input[type="hidden"], input[type="text"]').each((_, el) => {
-                    const name = $(el).attr('name');
-                    if (name) formData.append(name, $(el).attr('value') || '');
-                });
-
-                let postUrl = formAction.startsWith('http') ? formAction : new URL(currentUrl).origin + formAction;
-                
-                // On envoie le formulaire SAML
-                response = await client.post(postUrl, formData.toString(), {
-                    maxRedirects: 0,
-                    validateStatus: () => true,
-                    headers: { 
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        ...ROBOT_HEADERS 
-                    }
-                });
-
-                // Si le POST nous redirige, on suit
-                if (response.status >= 300 && response.status < 400 && response.headers.location) {
-                    currentUrl = response.headers.location;
-                    continue;
-                }
-            }
-
-            // 🏁 Cas C : Si pas de redirection et pas de SAML, on est arrivé !
-            if (response.status === 200) {
-                console.log(`✅ Atterrissage définitif !`);
-                break;
-            }
-        }
-
-        // On vérifie le trophée final
-        const foadCookies = jar.getCookiesSync('https://foad.univ-rennes.fr');
-        console.log("\n🍪 Cookies FOAD obtenus :", foadCookies.map(c => c.key));
-
-        res.send(response.data);
-
-    } catch (error) {
-        console.error("🔥 Erreur Crawler :", error.message);
-        res.status(500).send(error.message);
-    }
-});
-
 // 2️⃣ LE SCANNER DE COURS : Extrait le contenu (Chapitres, PDF, Devoirs)
 router.get('/moodle/course/:id', async (req, res) => {
     try {
@@ -858,22 +775,6 @@ router.get('/mails', async (req, res) => {
         res.status(500).json({ success: false });
     }
 });
-
-// Fonction utilitaire pour fouiller dans l'oignon Zimbra
-function findMailBody(part) {
-    // Si cette partie a du contenu direct, c'est gagné !
-    if (part.content && (part.ct === 'text/html' || part.ct === 'text/plain')) {
-        return { content: part.content, type: part.ct };
-    }
-    // Sinon, si elle a des sous-parties (mp), on fouille dedans
-    if (part.mp) {
-        for (const subPart of part.mp) {
-            const found = findMailBody(subPart);
-            if (found) return found;
-        }
-    }
-    return null;
-}
 
 router.get('/mail/:id', async (req, res) => {
     const { id } = req.params;

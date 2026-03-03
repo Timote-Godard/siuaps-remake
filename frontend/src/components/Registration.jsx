@@ -14,7 +14,7 @@ const Registration = ({ onBack }) => {
     const fetchActivities = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:5000/api/registration-data');
+            const res = await fetch('/api/registration-data');
             const data = await res.json();
             if (data.success) setActivities(data.activities);
         } catch (error) {
