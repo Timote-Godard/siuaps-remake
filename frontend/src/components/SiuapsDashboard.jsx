@@ -10,7 +10,8 @@ const SiuapsDashboard = ({ userData, activeTab, setActiveTab, onNavigateToSlots,
     const bgButtonHover = "hover:bg-green-100 bg-white hover:cursor-pointer";
     
 
-    const bgButtonClickable = "active:text-white md:active:translate-y-[4px] md:active:translate-x-[4px] md:active:shadow-none hover:cursor-pointer text-black hover:bg-green-600 hover:text-white md:hover:translate-y-[-2px] md:hover:translate-x-[-2px] md:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
+    const bgButtonClickable = "active:text-white active:translate-y-1 active:translate-x-1 active:shadow-none hover:cursor-pointer text-black hover:bg-green-600 hover:text-white hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]";
+    const bgNavClickable = "hover:cursor-pointer text-black hover:bg-green-600 hover:text-white ";
 
     
 
@@ -22,6 +23,10 @@ const SiuapsDashboard = ({ userData, activeTab, setActiveTab, onNavigateToSlots,
             <div className="absolute pointer-events-none"></div>
 
             <div className="relative z-10 w-full max-w-3xl p-4 font-sans animate-in fade-in duration-100">
+
+                <header className="flex justify-between items-end border-b-8 border-black pb-4 mb-6">
+                                        <h1 className="text-5xl font-black uppercase italic">Siuaps</h1>
+                                    </header>
                 
                 {/* EN-TÊTE */}
                 <header className="mb-6 flex flex-col gap-4">
@@ -41,7 +46,7 @@ const SiuapsDashboard = ({ userData, activeTab, setActiveTab, onNavigateToSlots,
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`flex-1 flex flex-col justify-center items-center transition-all duration-100 
-                                            ${activeTab === tab.id ? bgButtonActif + " " + textButtonActif : bgButtonClickable + " " + ""}`}
+                                            ${activeTab === tab.id ? bgButtonActif + " " + textButtonActif : bgNavClickable + " " + ""}`}
                                     >
                                         {tab.icon}
                                         <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>

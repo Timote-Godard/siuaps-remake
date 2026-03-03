@@ -8,8 +8,11 @@ const MoodleDashboard = ({ moodleData, onLogout }) => {
     return (
         <div className="p-4 h-full overflow-y-auto">
             {/* Header Moodle */}
+
+            <header className="flex justify-between items-end border-b-8 border-black pb-4 mb-6">
+                                        <h1 className="text-5xl font-black uppercase italic">Moodle</h1>
+                                    </header>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-                <h1 className="text-3xl font-black uppercase tracking-tighter">Mes Cours</h1>
                 <button 
                     onClick={onLogout} 
                     className="border-4 border-black p-2 font-black bg-red-400 hover:bg-red-600 hover:text-white flex items-center justify-center gap-2 cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all"

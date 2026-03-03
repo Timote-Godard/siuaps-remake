@@ -17,7 +17,7 @@ const userValidationTimers = new Map();
 // 🚀 FONCTION DU TRAVAILLEUR DE L'OMBRE
 const planifierValidationSiuaps = (userId, locationId, studentName) => {
     const NOW = Date.now();
-    const DELAI_30_MIN = 30 * 60 * 1000; 
+    const DELAI_MIN = 35 * 60 * 1000; 
     
     // On utilise le NOM pour lier ses 2 créneaux, même s'il a 2 ID différents
     const timerKey = studentName || userId; 
@@ -27,8 +27,8 @@ const planifierValidationSiuaps = (userId, locationId, studentName) => {
     // S'il est DÉJÀ dans la file d'attente, on décale son exécution de 30 min !
     if (userValidationTimers.has(timerKey)) {
         const derniereValidation = userValidationTimers.get(timerKey);
-        if (NOW - derniereValidation < DELAI_30_MIN) {
-            tempsExecution = derniereValidation + DELAI_30_MIN;
+        if (NOW - derniereValidation < DELAI_MIN) {
+            tempsExecution = derniereValidation + DELAI_MIN;
         }
     }
 

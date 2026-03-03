@@ -84,7 +84,7 @@ const MailDashboard = ({ mailData }) => {
                             <div 
                                 key={mail.id} 
                                 onClick={() => handleOpenMail(mail)}
-                                className={`cursor-pointer border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all
+                                className={`cursor-pointer border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all
                                 ${mail.isUnread ? 'bg-white font-black' : 'bg-gray-50 opacity-80'}`}
                             >
                                 <div className="flex justify-between text-[10px] uppercase mb-1">
@@ -98,7 +98,7 @@ const MailDashboard = ({ mailData }) => {
                 </>
             ) : (
                 /* VUE LECTURE (L'email ouvert) */
-                <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="animate-in fade-in slide-in-from-right-4 duration-300 pb-20">
                     <button 
                         onClick={() => setSelectedMail(null)}
                         className="mb-6 flex items-center gap-2 bg-black text-white px-4 py-2 font-black uppercase hover:bg-blue-300 hover:text-black border-4 border-black transition-colors"

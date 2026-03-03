@@ -294,7 +294,7 @@ const EntDashboard = ({ onBack }) => {
             <div className="max-w-7xl mx-auto">
                 <header className="flex justify-between items-end border-b-8 border-black pb-4 mb-6">
                         <h1 className="text-5xl font-black uppercase italic">Agenda</h1>
-                        <button onClick={() => setShowWizard(true)} className="relative right-0 top-0 border-2 border-black p-2 bg-white hover:bg-black hover:text-white cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
+                        <button onClick={() => setShowWizard(true)} className="relative right-0 top-0 border-2 border-black p-2 bg-white hover:bg-black hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 hover:text-white cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all">
                             <Settings size={18} />
                         </button>
                     </header>
@@ -304,7 +304,7 @@ const EntDashboard = ({ onBack }) => {
                     
 
                     <div className="flex items-center gap-4">
-                        <button onClick={goToPrev} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronLeft size={24} /></button>
+                        <button onClick={goToPrev} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:text-white hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronLeft size={24} /></button>
                         
                         <div className="text-center min-w-[200px]">
                             <span className="font-black uppercase block text-sm opacity-60">
@@ -318,7 +318,7 @@ const EntDashboard = ({ onBack }) => {
                             </span>
                         </div>
 
-                        <button onClick={goToNext} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronRight size={24} /></button>
+                        <button onClick={goToNext} className="bg-white border-3 border-black p-1 hover:translate-y-[-2px] hover:text-white hover:translate-x-[-2px] cursor-pointer hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"><ChevronRight size={24} /></button>
                     </div>
 
                 </div>
@@ -404,13 +404,24 @@ const EntDashboard = ({ onBack }) => {
                         {new Date(course.debut).getHours()}H{String(new Date(course.debut).getMinutes()).padStart(2, '0')}
                     </div>
                     
-                    <h4 className="font-black text-[9px] sm:text-[10px] leading-tight uppercase mb-1 break-words">
+                    <h4 className="font-black text-sm sm:text-[10px] leading-tight uppercase mb-1 break-words">
                         {course.titre}
                     </h4>
-                    
-                    <div className="mt-auto flex items-center gap-1 text-[12px] font-bold opacity-90 truncate bg-white border border-black px-1 w-fit shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                        <MapPin size={8} strokeWidth={3} /> {course.salle}
+
+
+                    <div className="mt-auto flex flex-wrap gap-1">
+                        {course.salle.split(",").map((salle, index) => (
+                            <div 
+                                key={index}
+                                className="flex items-center gap-1 text-[10px] sm:text-[12px] font-bold opacity-90 truncate bg-white border border-black px-1 w-fit shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+                            >
+                                <MapPin size={8} strokeWidth={3} /> 
+                                {salle.trim()}
+                            </div>
+                        ))}
                     </div>
+
+                     
                 </div>
             </div>
         );
