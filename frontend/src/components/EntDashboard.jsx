@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Loader2, ArrowLeft, ChevronLeft, ChevronRight, MapPin, Clock, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SetupWizard from './SetupWizard';
-import ressources from '../assets/ressources_rennes1.json';
+import ressources from '/assets/ressources.json';
 
 // 🎨 1. PALETTE DE COULEURS NÉOBRUTALISTES
 // 🎨 1. PALETTE DE COULEURS NÉOBRUTALISTES
@@ -260,7 +260,7 @@ const EntDashboard = ({ onBack }) => {
         setLoading(true);
         try {
             const ids = selectedResources.map(r => r.id).join(',');
-            const res = await fetch(`http://localhost:5000/api/agenda-merged?resources=${ids}`);
+            const res = await fetch(`/api/agenda-merged?resources=${ids}`);
             const data = await res.json();
             if (data.success) setAgenda(data.agenda);
         } catch (err) { console.error(err); } 
