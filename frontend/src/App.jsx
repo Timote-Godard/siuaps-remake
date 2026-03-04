@@ -127,7 +127,7 @@ const App = () => {
   if (isCheckingSession) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-white border-8 border-green-600">
-        <h1 className="text-4xl font-green-600 uppercase tracking-tighter">SIUAPS</h1>
+        <h1 className="text-4xl font-green-600 uppercase tracking-tighter">ça arrive fort</h1>
         <p className="font-bold text-sm bg-green-600 text-white px-2 py-1 mt-2 uppercase animate-pulse">Connexion automatique...</p>
       </div>
     );

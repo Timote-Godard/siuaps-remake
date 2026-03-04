@@ -13,7 +13,7 @@ const Login = ({ onLoginSuccess }) => {
 
     try {
       // Remplace l'URL par celle de ton serveur Node
-      const response = await fetch('/api/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -43,13 +43,14 @@ const Login = ({ onLoginSuccess }) => {
 
       <div className="relative z-10 w-full max-w-sm p-6">
         <form 
-          onSubmit={handleSubmit}
+          // onSubmit={handleSubmit}
           className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm"
         >
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-black uppercase tracking-tighter">SIUAPS</h1>
+            <h1 className="text-4xl font-black uppercase tracking-tighter">Login  </h1>
             <p className="font-bold text-sm text-gray-500 uppercase">Université de Rennes</p>
           </div>
+          
 
           {error && (
             <div className="bg-red-100 border-2 border-black p-3 mb-6 text-red-700 font-bold text-sm italic">
@@ -95,7 +96,7 @@ const Login = ({ onLoginSuccess }) => {
 
           <div className="mt-8 text-center">
             <p className="text-[10px] text-gray-400 font-bold uppercase">
-              Tes identifiants sont transmis de manière sécurisée au CAS de Rennes.
+              Tes identifiants ne sont pas sauvegardés, ils sont seulement transmis à l'ent de Rennes.
             </p>
           </div>
         </form>
